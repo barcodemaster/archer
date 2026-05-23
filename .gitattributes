@@ -1,0 +1,66 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Unity text files
+*.cs text diff
+*.shader text diff
+*.compute text diff
+*.cginc text diff
+*.hlsl text diff
+*.mat text diff
+*.meta text diff
+*.asset text diff
+*.unity text diff
+*.prefab text diff
+*.anim text diff
+*.controller text diff
+*.overrideController text diff
+*.physicMaterial text diff
+*.physicsMaterial2D text diff
+*.spriteatlas text diff
+*.json text diff
+*.xml text diff
+*.yaml text diff
+*.txt text diff
+*.md text diff
+*.csv text diff
+*.html text diff
+*.css text diff
+*.js text diff
+
+# Unity binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.tga binary
+*.tif binary
+*.tiff binary
+*.psd binary
+*.exr binary
+*.hdr binary
+*.fbx binary
+*.obj binary
+*.blend binary
+*.dae binary
+*.3ds binary
+*.max binary
+*.mb binary
+*.ma binary
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.aif binary
+*.ttf binary
+*.otf binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.a binary
+*.exe binary
+*.apk binary
+*.unitypackage binary
+*.cubemap binary
+*.mp4 binary
+*.mov binary
