@@ -24,18 +24,18 @@ public static class AStarPathfinder
 	/// from에서 to까지 A* 경로를 탐색한다. 블록/비통과 타일을 피한다.
 	/// 경로가 없으면 빈 리스트 반환. 반환 리스트는 from 제외, to 포함.
 	/// </summary>
-	public static List<Vector2Int> FindPath(MapData mapData, Vector2Int from, Vector2Int to, ETilePassFlag passFlags)
+	public static List<Vector2Int> FindPath(TileMap tileMap, Vector2Int from, Vector2Int to, ETilePassFlag passFlags)
 	{
 		if (from == to)
 			return new List<Vector2Int>();
 
-		int w = mapData.width;
-		int h = mapData.height;
+		int w = tileMap.Width;
+		int h = tileMap.Height;
 
 		// 목표가 이동 불가 타일이면 가장 가까운 이동 가능 인접 타일로 대체
-		if (!IsWalkable(mapData, to, passFlags))
+		if (!IsWalkable(tileMap, to, passFlags))
 		{
-			Vector2Int? alt = FindNearestWalkable(mapData, to, passFlags);
+			Vector2Int? alt = FindNearestWalkable(tileMap, to, passFlags);
 			if (alt == null) return new List<Vector2Int>();
 			to = alt.Value;
 		}
@@ -67,7 +67,7 @@ public static class AStarPathfinder
 				Vector2Int next = curPos + dir;
 				if (next.x < 0 || next.x >= w || next.y < 0 || next.y >= h)
 					continue;
-				if (!IsWalkable(mapData, next, passFlags))
+				if (!IsWalkable(tileMap, next, passFlags))
 					continue;
 
 				int newG = curNode.gCost + 1;
@@ -91,22 +91,22 @@ public static class AStarPathfinder
 		return new List<Vector2Int>();
 	}
 
-	private static bool IsWalkable(MapData mapData, Vector2Int pos, ETilePassFlag flags)
+	private static bool IsWalkable(TileMap tileMap, Vector2Int pos, ETilePassFlag flags)
 	{
-		ETileType tile = mapData.GetTile(pos.x, pos.y);
+		ETileType tile = tileMap.GetTile(pos.x, pos.y);
 		if (!TileMap.IsTilePassable(tile, flags))
 			return false;
-		if (mapData.GetBlockIndex(pos.x, pos.y) >= 0)
+		if (!tileMap.CanPassBlock(pos.x, pos.y))
 			return false;
 		return true;
 	}
 
-	private static Vector2Int? FindNearestWalkable(MapData mapData, Vector2Int center, ETilePassFlag flags)
+	private static Vector2Int? FindNearestWalkable(TileMap tileMap, Vector2Int center, ETilePassFlag flags)
 	{
 		foreach (Vector2Int dir in Dirs)
 		{
 			Vector2Int adj = center + dir;
-			if (IsWalkable(mapData, adj, flags))
+			if (IsWalkable(tileMap, adj, flags))
 				return adj;
 		}
 		return null;

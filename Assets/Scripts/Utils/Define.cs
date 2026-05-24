@@ -7,6 +7,7 @@ public class Define
 		Path  = 0,
 		Wall  = 1,
 		Water = 2,
+		Spike = 3,
 	}
 
 	[System.Flags]
@@ -19,6 +20,13 @@ public class Define
 		WallPass  = 1 << 3,
 	}
 
+	public enum EProjectileMoveType
+	{
+		Straight,
+		Arc,
+		Piercing,
+	}
+
 	public enum EState
 	{
 		None,
@@ -26,6 +34,24 @@ public class Define
 		Move,
 		Attack,
 		Die,
+		Jump,
+		Skill1,
+		Skill2,
+		Skill3,
+	}
+
+	public enum EUpgradeType
+	{
+		AttackSpeed,
+		FrontArrow,
+		MultiShot,
+		Piercing,
+		Headshot,
+		DiagonalArrow,
+		WallBounce,
+		SideArrow,
+		Ricochet,
+		BackArrow,
 	}
 
 	public static int IDLE = Animator.StringToHash("Idle");
@@ -34,4 +60,8 @@ public class Define
 	public static int DIE = Animator.StringToHash("Die");
 	public static int SERVING_IDLE = Animator.StringToHash("ServingIdle");
 	public static int SERVING_MOVE = Animator.StringToHash("ServingMove");
+	public static int JUMP = Animator.StringToHash("Jump");
+	public static int SKILL1 = Animator.StringToHash("Skill1");
+	public static int SKILL2 = Animator.StringToHash("Skill2");
+	public static int SKILL3 = Animator.StringToHash("Skill3");
 }

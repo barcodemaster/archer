@@ -8,11 +8,15 @@ public abstract class MonsterBase : MonoBehaviour
 	[SerializeField] private float _damage = 10f;
 	[SerializeField] private float _contactDamageCooldown = 0.5f;
 	[SerializeField] private Vector3 _snapToGroundOffset;
+	[SerializeField] private Vector3 _triggerColliderCenter;
 
 	[SerializeField] private float _physicsRadius = 0.35f;
 	[SerializeField] private float _physicsHeight = 1.6f;
 	[SerializeField] private float _weight = 1f;
-	[SerializeField] private bool _overlapWithPlayer = false;
+	[SerializeField] protected bool _overlapWithPlayer = false;
+	[SerializeField] protected bool _immovable = false;
+	[SerializeField] private bool _isBoss = false;
+	[SerializeField] private int _expReward = 20;
 
 	private float _currentHp;
 	private float _contactDamageTimer;
@@ -47,15 +51,21 @@ public abstract class MonsterBase : MonoBehaviour
 	public float CurrentHp => _currentHp;
 	public float Damage => _damage;
 	public float Weight => _weight;
+	public bool IsBoss => _isBoss;
+	public int ExpReward => _expReward;
 	public bool OverlapWithPlayer => _overlapWithPlayer;
 	protected Transform Target => _target;
 	protected Animator Anim => _animator;
+	protected TilePassability Passability => _passability;
+	protected Rigidbody Rb => _rb;
 
 	protected virtual void Start()
 	{
 		_currentHp = _maxHp;
 		_animator = GetComponent<Animator>();
 		_collider = GetComponent<Collider>();
+		if (_overlapWithPlayer && _collider is CapsuleCollider triggerCapsule)
+			triggerCapsule.center = _triggerColliderCenter;
 		_hpBar = GetComponentInChildren<MonsterHPBar>();
 		_passability = GetComponent<TilePassability>();
 
@@ -74,6 +84,9 @@ public abstract class MonsterBase : MonoBehaviour
 			rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
 			rb.mass = _weight;
 			_rb = rb;
+
+			if (_immovable)
+				_rb.constraints = RigidbodyConstraints.FreezeAll;
 		}
 
 		if (_animator != null)
@@ -115,6 +128,9 @@ public abstract class MonsterBase : MonoBehaviour
 
 		_currentHp -= damage;
 
+		CameraController.Instance?.Shake(0.15f, 0.15f);
+		DamageTextSpawner.Spawn(transform.position + Vector3.up, damage, false);
+
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
 
@@ -123,6 +139,25 @@ public abstract class MonsterBase : MonoBehaviour
 			_currentHp = 0f;
 			Die();
 		}
+	}
+
+	/// <summary>
+	/// HP를 0으로 만들고 즉사시킨다. 보스에게는 사용 불가.
+	/// </summary>
+	public void InstantKill()
+	{
+		if (_state == EState.Die) return;
+
+		float killDamage = _maxHp;
+		_currentHp = 0f;
+
+		CameraController.Instance?.Shake(0.15f, 0.15f);
+		DamageTextSpawner.Spawn(transform.position + Vector3.up, killDamage, false);
+
+		if (_hpBar != null)
+			_hpBar.SetHP(0f, _maxHp);
+
+		Die();
 	}
 
 	protected virtual void UpdateAnimation()
@@ -145,6 +180,22 @@ public abstract class MonsterBase : MonoBehaviour
 			case EState.Die:
 				_animator.speed = 1f;
 				_animator.CrossFade(Define.DIE, 0.1f);
+				break;
+			case EState.Jump:
+				_animator.speed = 1f;
+				_animator.CrossFade(Define.JUMP, 0.1f);
+				break;
+			case EState.Skill1:
+				_animator.speed = 1f;
+				_animator.CrossFade(Define.SKILL1, 0.1f);
+				break;
+			case EState.Skill2:
+				_animator.speed = 1f;
+				_animator.CrossFade(Define.SKILL2, 0.1f);
+				break;
+			case EState.Skill3:
+				_animator.speed = 1f;
+				_animator.CrossFade(Define.SKILL3, 0.1f);
 				break;
 		}
 	}
@@ -193,7 +244,7 @@ public abstract class MonsterBase : MonoBehaviour
 
 		_pathRefreshTimer = PATH_REFRESH_INTERVAL;
 		TileMap tileMap = StageManager.Instance.TileMap;
-		if (tileMap == null || tileMap.MapData == null || _passability == null || _target == null)
+		if (tileMap == null || _passability == null || _target == null)
 		{
 			_path.Clear();
 			return;
@@ -201,7 +252,7 @@ public abstract class MonsterBase : MonoBehaviour
 
 		Vector2Int myGrid = tileMap.WorldToGrid(transform.position);
 		Vector2Int targetGrid = tileMap.WorldToGrid(_target.position);
-		_path = AStarPathfinder.FindPath(tileMap.MapData, myGrid, targetGrid, _passability.PassFlags);
+		_path = AStarPathfinder.FindPath(tileMap, myGrid, targetGrid, _passability.PassFlags);
 		_pathIndex = 0;
 	}
 
@@ -241,6 +292,16 @@ public abstract class MonsterBase : MonoBehaviour
 		return toWaypoint.normalized;
 	}
 
+	/// <summary>
+	/// 투사체 피격 시 방향으로 넉백시킨다. Rigidbody가 없으면 무시.
+	/// </summary>
+	public void Knockback(Vector3 direction, float force)
+	{
+		if (_rb == null) return;
+		direction.y = 0;
+		_rb.AddForce(direction.normalized * force, ForceMode.Impulse);
+	}
+
 	protected void StopMovement()
 	{
 		if (_rb != null)
@@ -261,13 +322,11 @@ public abstract class MonsterBase : MonoBehaviour
 	private void OnTriggerStay(Collider other)
 	{
 		if (_state == EState.Die) return;
+		PlayerController player = other.GetComponent<PlayerController>();
+		if (player == null) return;
 		_contactDamageTimer -= Time.deltaTime;
 		if (_contactDamageTimer > 0f) return;
-		PlayerController player = other.GetComponent<PlayerController>();
-		if (player != null)
-		{
-			player.TakeDamage(_damage);
-			_contactDamageTimer = _contactDamageCooldown;
-		}
+		player.TakeDamage(_damage);
+		_contactDamageTimer = _contactDamageCooldown;
 	}
 }

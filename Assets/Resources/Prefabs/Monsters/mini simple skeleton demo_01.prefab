@@ -465,7 +465,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3854269363171675655}
   - component: {fileID: 4985691113074979274}
-  - component: {fileID: -7212629273589288622}
   - component: {fileID: -1588336508519738049}
   - component: {fileID: 2629876861780907949}
   m_Layer: 0
@@ -518,29 +517,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!136 &-7212629273589288622
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3136820629370392942}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1.6
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.7, z: 0}
 --- !u!114 &-1588336508519738049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -555,12 +531,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkeletonMonster
   _maxHp: 100
   _damage: 10
-  _contactDamageCooldown: 0.5
+  _contactDamageCooldown: 1.5
   _snapToGroundOffset: {x: 0, y: 0.5, z: 0}
-  _physicsRadius: 0.35
+  _physicsRadius: 0.5
   _physicsHeight: 1.6
   _weight: 1
   _overlapWithPlayer: 0
+  _immovable: 0
   _moveSpeed: 1.8
 --- !u!114 &2629876861780907949
 MonoBehaviour:

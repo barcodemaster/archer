@@ -1,0 +1,11 @@
+type,name,description,icon
+AttackSpeed,공격 속도,공격 속도가 15% 증가합니다,icon_attack_speed
+FrontArrow,전방 화살,전방에 화살을 추가합니다,icon_front_arrow
+MultiShot,멀티샷,연속으로 화살을 발사합니다,icon_multishot
+Piercing,관통,화살이 적을 관통합니다,icon_piercing
+Headshot,헤드샷,즉사 확률 8% 증가,icon_headshot
+DiagonalArrow,대각선 화살,45도 방향으로 화살 추가,icon_diagonal
+WallBounce,벽 반사,화살이 벽에 반사됩니다,icon_wallbounce
+SideArrow,측면 화살,90도 방향으로 화살 추가,icon_side_arrow
+Ricochet,도탄,적 사이를 튕기는 화살,icon_ricochet
+BackArrow,후방 화살,뒤로도 화살을 발사합니다,icon_back_arrow

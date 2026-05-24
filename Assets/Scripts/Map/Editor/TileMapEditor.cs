@@ -5,17 +5,15 @@ using static Define;
 [CustomEditor(typeof(TileMap))]
 public class TileMapEditor : Editor
 {
-	private enum EBrushMode { None, TilePaint, BlockPlace, MonsterPlace, SpawnPoint, ExitPoint }
+	private enum EBrushMode { None, TilePaint, BlockPlace, SpikePlace, MonsterPlace, SpawnPoint, ExitPoint }
 
 	private EBrushMode _brushMode = EBrushMode.None;
 	private ETileType _tileBrush = ETileType.Path;
 	private int _blockBrushIndex = 0;
 	private bool _removeBlock = false;
+	private bool _removeSpike = false;
 	private int _monsterBrushIndex = 0;
 	private bool _removeMonster = false;
-
-	private bool _showRandomSettings = false;
-	private MapGenerationSettings _randomSettings = new MapGenerationSettings();
 
 	public override void OnInspectorGUI()
 	{
@@ -28,45 +26,10 @@ public class TileMapEditor : Editor
 
 		EditorGUILayout.BeginHorizontal();
 		if (GUILayout.Button("Generate Preview"))
-		{
-			if (tileMap.MapData != null)
-			{
-				tileMap.MapData.InitIfNeeded();
-				tileMap.GenerateVisuals();
-			}
-		}
+			tileMap.GenerateVisuals();
 		if (GUILayout.Button("Clear Preview"))
-		{
 			tileMap.ClearVisuals();
-		}
 		EditorGUILayout.EndHorizontal();
-
-		if (GUILayout.Button("Generate Random"))
-		{
-			if (tileMap.MapData != null)
-			{
-				Undo.RecordObject(tileMap.MapData, "Generate Random Map");
-				tileMap.GenerateRandomMap(_randomSettings);
-				EditorUtility.SetDirty(tileMap.MapData);
-				tileMap.GenerateVisuals();
-			}
-		}
-
-		_showRandomSettings = EditorGUILayout.Foldout(_showRandomSettings, "Random Settings");
-		if (_showRandomSettings)
-		{
-			EditorGUI.indentLevel++;
-			_randomSettings.waterRegionCount = EditorGUILayout.IntField("Water Regions", _randomSettings.waterRegionCount);
-			EditorGUILayout.BeginHorizontal();
-			EditorGUILayout.PrefixLabel("Water Size");
-			_randomSettings.waterMinSize = EditorGUILayout.IntField(_randomSettings.waterMinSize, GUILayout.Width(40));
-			EditorGUILayout.LabelField("~", GUILayout.Width(14));
-			_randomSettings.waterMaxSize = EditorGUILayout.IntField(_randomSettings.waterMaxSize, GUILayout.Width(40));
-			EditorGUILayout.EndHorizontal();
-			_randomSettings.blockDensity = EditorGUILayout.Slider("Block Density", _randomSettings.blockDensity, 0f, 0.3f);
-			_randomSettings.seed = EditorGUILayout.IntField("Seed (0=rand)", _randomSettings.seed);
-			EditorGUI.indentLevel--;
-		}
 
 		EditorGUILayout.Space();
 		EditorGUILayout.LabelField("Brush", EditorStyles.boldLabel);
@@ -75,8 +38,8 @@ public class TileMapEditor : Editor
 		switch (_brushMode)
 		{
 			case EBrushMode.TilePaint:
-				string[] tileNames = { "Path", "Water" };
-				ETileType[] tileTypes = { ETileType.Path, ETileType.Water };
+				string[] tileNames = { "Path", "Water", "Wall" };
+				ETileType[] tileTypes = { ETileType.Path, ETileType.Water, ETileType.Wall };
 				int cur = System.Array.IndexOf(tileTypes, _tileBrush);
 				if (cur < 0) cur = 0;
 				_tileBrush = tileTypes[EditorGUILayout.Popup("Tile Type", cur, tileNames)];
@@ -90,6 +53,9 @@ public class TileMapEditor : Editor
 						names[i] = tileMap.BlockPrefabs[i] != null ? tileMap.BlockPrefabs[i].name : $"(empty {i})";
 					_blockBrushIndex = EditorGUILayout.Popup("Block Prefab", _blockBrushIndex, names);
 				}
+				break;
+			case EBrushMode.SpikePlace:
+				_removeSpike = EditorGUILayout.Toggle("Remove Spike", _removeSpike);
 				break;
 			case EBrushMode.MonsterPlace:
 				_removeMonster = EditorGUILayout.Toggle("Remove Monster", _removeMonster);
@@ -112,9 +78,6 @@ public class TileMapEditor : Editor
 		if (_brushMode == EBrushMode.None) return;
 
 		TileMap tileMap = (TileMap)target;
-		MapData mapData = tileMap.MapData;
-		if (mapData == null) return;
-		mapData.InitIfNeeded();
 
 		HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
 
@@ -127,7 +90,7 @@ public class TileMapEditor : Editor
 		Vector3 hitPoint = ray.GetPoint(distance);
 		Vector2Int grid = tileMap.WorldToGrid(hitPoint);
 
-		if (grid.x < 0 || grid.x >= mapData.width || grid.y < 0 || grid.y >= mapData.height) return;
+		if (grid.x < 0 || grid.x >= tileMap.Width || grid.y < 0 || grid.y >= tileMap.Height) return;
 
 		Vector3 cellCenter = tileMap.GridToWorld(grid.x, grid.y);
 		Handles.color = Color.white;
@@ -146,58 +109,58 @@ public class TileMapEditor : Editor
 
 		if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0)
 		{
-			int idx = grid.y * mapData.width + grid.x;
-
 			switch (_brushMode)
 			{
 				case EBrushMode.TilePaint:
-					if (mapData.tiles[idx] != _tileBrush)
+					ETileType curTile = tileMap.GetTile(grid.x, grid.y);
+					if (curTile != _tileBrush)
 					{
-						Undo.RecordObject(mapData, "Paint Tile");
-						mapData.tiles[idx] = _tileBrush;
-						EditorUtility.SetDirty(mapData);
+						Undo.RecordObject(tileMap, "Paint Tile");
+						tileMap.SetTile(grid.x, grid.y, _tileBrush);
+						EditorUtility.SetDirty(tileMap);
 						tileMap.GenerateVisuals();
 					}
 					break;
 
 				case EBrushMode.BlockPlace:
 					int newBlockIdx = _removeBlock ? -1 : _blockBrushIndex;
-					if (mapData.blockPrefabIndices[idx] != newBlockIdx)
+					Undo.RecordObject(tileMap, "Place Block");
+					tileMap.SetBlock(grid.x, grid.y, newBlockIdx);
+					EditorUtility.SetDirty(tileMap);
+					tileMap.GenerateVisuals();
+					break;
+
+				case EBrushMode.SpikePlace:
+					ETileType currentTile = tileMap.GetTile(grid.x, grid.y);
+					bool isSpike = currentTile == ETileType.Spike;
+					bool wantSpike = !_removeSpike;
+					if (isSpike != wantSpike)
 					{
-						Undo.RecordObject(mapData, "Place Block");
-						mapData.blockPrefabIndices[idx] = newBlockIdx;
-						EditorUtility.SetDirty(mapData);
+						Undo.RecordObject(tileMap, "Place Spike");
+						tileMap.SetTile(grid.x, grid.y, wantSpike ? ETileType.Spike : ETileType.Path);
+						EditorUtility.SetDirty(tileMap);
 						tileMap.GenerateVisuals();
 					}
 					break;
 
 				case EBrushMode.MonsterPlace:
 					int newMonIdx = _removeMonster ? -1 : _monsterBrushIndex;
-					if (mapData.monsterPrefabIndices[idx] != newMonIdx)
-					{
-						Undo.RecordObject(mapData, "Place Monster");
-						mapData.monsterPrefabIndices[idx] = newMonIdx;
-						EditorUtility.SetDirty(mapData);
-					}
+					Undo.RecordObject(tileMap, "Place Monster");
+					tileMap.SetMonster(grid.x, grid.y, newMonIdx);
+					EditorUtility.SetDirty(tileMap);
 					break;
 
 				case EBrushMode.SpawnPoint:
-					if (mapData.playerSpawnPoint != grid)
-					{
-						Undo.RecordObject(mapData, "Set Spawn Point");
-						mapData.playerSpawnPoint = grid;
-						EditorUtility.SetDirty(mapData);
-					}
+					Undo.RecordObject(tileMap, "Set Spawn Point");
+					tileMap.SetSpawnPoint(grid);
+					EditorUtility.SetDirty(tileMap);
 					break;
 
 				case EBrushMode.ExitPoint:
-					if (mapData.exitPoint != grid)
-					{
-						Undo.RecordObject(mapData, "Set Exit Point");
-						mapData.exitPoint = grid;
-						EditorUtility.SetDirty(mapData);
-						tileMap.GenerateVisuals();
-					}
+					Undo.RecordObject(tileMap, "Set Exit Point");
+					tileMap.SetExitPoint(grid);
+					EditorUtility.SetDirty(tileMap);
+					tileMap.GenerateVisuals();
 					break;
 			}
 

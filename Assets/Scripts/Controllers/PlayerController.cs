@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using static Define;
 
@@ -30,6 +32,7 @@ public class PlayerController : MonoBehaviour
 	private AudioSource _audioSource;
 	private PlayerHPBar _hpBar;
 	private TilePassability _passability;
+	private PlayerUpgrade _upgrade;
 
 	public float MaxHp => _maxHp;
 	public float CurrentHp => _currentHp;
@@ -57,6 +60,16 @@ public class PlayerController : MonoBehaviour
 		_controller = GetComponent<CharacterController>();
 		_audioSource = GetComponent<AudioSource>();
 		_passability = GetComponent<TilePassability>();
+		_upgrade = GetComponent<PlayerUpgrade>();
+		if (_upgrade == null)
+			_upgrade = gameObject.AddComponent<PlayerUpgrade>();
+
+		Rigidbody rb = GetComponent<Rigidbody>();
+		if (rb != null)
+		{
+			rb.isKinematic = true;
+			rb.useGravity = false;
+		}
 	}
 
 	private void Start()
@@ -69,6 +82,9 @@ public class PlayerController : MonoBehaviour
 
 	private void Update()
 	{
+		if (GameManager.Instance.IsPaused)
+			return;
+
 		if (_state == EState.Die)
 			return;
 
@@ -102,7 +118,7 @@ public class PlayerController : MonoBehaviour
 					// 공격 상태 최초 진입: 즉시 애니메이션 시작
 					_hasFired = false;
 					_lastLoopIndex = 0;
-					_animator.speed = _attackAnimSpeed;
+					_animator.speed = _attackAnimSpeed * _upgrade.AttackSpeedMultiplier;
 					State = EState.Attack;
 				}
 				else
@@ -163,21 +179,96 @@ public class PlayerController : MonoBehaviour
 	}
 
 	/// <summary>
-	/// 타겟 방향으로 투척물을 발사한다.
+	/// 타겟 방향으로 발리를 시작한다. 멀티샷이면 코루틴으로 반복.
 	/// </summary>
 	private void FireProjectile(MonsterBase target)
 	{
 		if (_projectilePrefab == null)
 			return;
 
-		Vector3 direction = (target.transform.position - transform.position).normalized;
+		Vector3 baseDir = target.transform.position - transform.position;
+		baseDir.y = 0;
+		baseDir.Normalize();
 
-		Vector3 spawnPos = transform.position + direction * 0.5f + Vector3.up;
-		GameObject go = Instantiate(_projectilePrefab, spawnPos, Quaternion.LookRotation(direction));
+		SpawnVolley(baseDir);
 
-		PlayerProjectile proj = go.GetComponent<PlayerProjectile>();
-		if (proj != null)
-			proj.Init(_attackDamage);
+		if (_upgrade.MultiShotLevel > 0)
+			StartCoroutine(MultiShotCoroutine(baseDir));
+	}
+
+	private IEnumerator MultiShotCoroutine(Vector3 baseDir)
+	{
+		for (int i = 0; i < _upgrade.MultiShotLevel; i++)
+		{
+			yield return new WaitForSeconds(_upgrade.MultiShotDelay);
+			if (_state == EState.Die) yield break;
+			SpawnVolley(baseDir);
+		}
+	}
+
+	/// <summary>
+	/// 모든 방향에 대해 전방화살 오프셋을 적용하여 투사체를 생성한다.
+	/// </summary>
+	private void SpawnVolley(Vector3 baseDir)
+	{
+		List<Vector3> directions = BuildDirections(baseDir);
+
+		ProjectileInitData data = new ProjectileInitData
+		{
+			damage = _attackDamage,
+			isPiercing = _upgrade.IsPiercing,
+			headshotChance = _upgrade.HeadshotChance,
+			wallBounce = _upgrade.IsWallBounce,
+			ricochetCount = _upgrade.RicochetCount,
+			ricochetRadius = _upgrade.RicochetRadius,
+		};
+
+		foreach (Vector3 dir in directions)
+		{
+			int totalCount = 1 + _upgrade.FrontArrowLevel;
+			Vector3 perp = Vector3.Cross(Vector3.up, dir).normalized;
+
+			for (int i = 0; i < totalCount; i++)
+			{
+				float offset = (i - (totalCount - 1) / 2f) * 0.4f;
+				Vector3 spawnPos = transform.position + dir * 0.5f + perp * offset;
+				spawnPos.y = 1f;
+
+				GameObject go = ObjectPool.Instance.Get(_projectilePrefab);
+				go.transform.position = spawnPos;
+				go.transform.rotation = Quaternion.LookRotation(dir);
+				ProjectileBase proj = go.GetComponent<ProjectileBase>();
+				if (proj != null)
+					proj.Init(data);
+			}
+		}
+	}
+
+	/// <summary>
+	/// 업그레이드에 따라 발사 방향 목록을 생성한다.
+	/// </summary>
+	private List<Vector3> BuildDirections(Vector3 baseDir)
+	{
+		List<Vector3> dirs = new List<Vector3> { baseDir };
+
+		if (_upgrade.HasDiagonalArrow)
+		{
+			dirs.Add(Quaternion.Euler(0, 45, 0) * baseDir);
+			dirs.Add(Quaternion.Euler(0, -45, 0) * baseDir);
+		}
+
+		if (_upgrade.HasSideArrow)
+		{
+			dirs.Add(Quaternion.Euler(0, 90, 0) * baseDir);
+			dirs.Add(Quaternion.Euler(0, -90, 0) * baseDir);
+		}
+
+		if (_upgrade.HasBackArrow)
+		{
+			dirs.Add(Quaternion.Euler(0, 180, 0) * baseDir);
+		}
+
+		return dirs;
 	}
 
 	/// <summary>
@@ -189,6 +280,8 @@ public class PlayerController : MonoBehaviour
 			return;
 
 		_currentHp -= damage;
+
+		DamageTextSpawner.Spawn(transform.position + Vector3.up * 1.5f, damage, true);
 
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);

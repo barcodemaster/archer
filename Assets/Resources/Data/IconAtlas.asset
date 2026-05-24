@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 130a9b7eceeda77448af575d64f1e4f9, type: 3}
+  m_Name: IconAtlas
+  m_EditorClassIdentifier: Assembly-CSharp::IconAtlas
+  _folderPath: Assets/Sprites/UI
+  _sprites:
+  - {fileID: 21300000, guid: fcca1192c3efa3d4ebc9a5a8e37f7065, type: 3}
+  - {fileID: 21300000, guid: 47d1b2c97c0d3d843960799cc2a4a34d, type: 3}
+  - {fileID: 21300000, guid: 52e9c4aa650872c4083819e57f7056fa, type: 3}
+  - {fileID: 21300000, guid: 59b22f7689d2d154dab1e33046b3657a, type: 3}
+  - {fileID: 21300000, guid: 3e4d3dd91ac9ce94db5f47e287700676, type: 3}
+  - {fileID: 21300000, guid: f1110dd10aa7b204390886134f36bc47, type: 3}
+  - {fileID: 21300000, guid: 1410874fc7583774d9586c31dbb95e33, type: 3}
+  - {fileID: 21300000, guid: d67b44ecd01ccf64d84d9e3f21a7cf7d, type: 3}

@@ -5,6 +5,11 @@ using static Define;
 public class Nepenthes : MonsterBase
 {
 	[SerializeField] private float _attackCooldown = 3f;
+
+	private void Awake()
+	{
+		_immovable = true;
+	}
 	[SerializeField] private GameObject _projectilePrefab;
 	[SerializeField] private float _scatterRadius = 1.5f;
 	[SerializeField] private int _projectileCount = 3;
@@ -59,8 +64,10 @@ public class Nepenthes : MonsterBase
 		if (_projectilePrefab == null) return;
 
 		Vector3 spawnPos = transform.position + Vector3.up;
-		GameObject go = Instantiate(_projectilePrefab, spawnPos, Quaternion.identity);
-		NepenthesProjectile proj = go.GetComponent<NepenthesProjectile>();
+		GameObject go = ObjectPool.Instance.Get(_projectilePrefab);
+		go.transform.position = spawnPos;
+		go.transform.rotation = Quaternion.identity;
+		ProjectileBase proj = go.GetComponent<ProjectileBase>();
 		if (proj != null)
 			proj.Init(Damage, targetPos);
 	}

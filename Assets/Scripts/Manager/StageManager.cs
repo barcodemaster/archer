@@ -57,25 +57,21 @@ public class StageManager : Singleton<StageManager>
 		_tileMap = _currentTileMapInstance.GetComponent<TileMap>();
 		_tileMap.GenerateVisuals();
 		_exitDoor = _tileMap.SpawnedExitDoor;
-		if (_exitDoor != null) _exitDoor.SetActive(false);
 
 		// 플레이어 이동
 		TeleportPlayerToSpawn();
 
-		// MapData 몬스터 스폰
-		if (_tileMap.MapData != null && _tileMap.MonsterPrefabs != null)
+		// TileMap 몬스터 스폰
+		if (_tileMap.MonsterPrefabs != null)
 		{
-			MapData md = _tileMap.MapData;
-			for (int z = 0; z < md.height; z++)
-				for (int x = 0; x < md.width; x++)
-				{
-					int mi = md.GetMonsterIndex(x, z);
-					if (mi < 0 || mi >= _tileMap.MonsterPrefabs.Length) continue;
-					GameObject go = Instantiate(_tileMap.MonsterPrefabs[mi],
-						_tileMap.GridToWorld(x, z), Quaternion.identity);
-					MonsterBase mb = go.GetComponent<MonsterBase>();
-					if (mb != null) _aliveMonsters.Add(mb);
-				}
+			foreach (var entry in _tileMap.PlacedMonsters)
+			{
+				if (entry.prefabIndex < 0 || entry.prefabIndex >= _tileMap.MonsterPrefabs.Length) continue;
+				GameObject go = Instantiate(_tileMap.MonsterPrefabs[entry.prefabIndex],
+					_tileMap.GridToWorld(entry.pos.x, entry.pos.y), Quaternion.LookRotation(Vector3.back));
+				MonsterBase mb = go.GetComponent<MonsterBase>();
+				if (mb != null) _aliveMonsters.Add(mb);
+			}
 		}
 
 		if (_aliveMonsters.Count == 0)
@@ -103,6 +99,7 @@ public class StageManager : Singleton<StageManager>
 	public void OnMonsterDead(MonsterBase monster)
 	{
 		_aliveMonsters.Remove(monster);
+		ExpManager.Instance.AddExp(monster.ExpReward);
 		if (_aliveMonsters.Count == 0)
 			OpenExitDoor();
 	}
@@ -113,7 +110,9 @@ public class StageManager : Singleton<StageManager>
 	private void OpenExitDoor()
 	{
 		if (_exitDoor == null) return;
-		_exitDoor.SetActive(true);
+		ExitDoor door = _exitDoor.GetComponent<ExitDoor>();
+		if (door != null)
+			door.OpenDoor();
 	}
 
 	/// <summary>

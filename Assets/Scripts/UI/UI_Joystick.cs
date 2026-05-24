@@ -13,11 +13,16 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	[SerializeField]
 	private GameObject _cursor;
 
+	private Vector2 _cursorStartPos;
+	private Vector2 _backgroundStartPos;
+
 	private float _radius;
 	private Vector2 _touchPos;
 
 	public void Start()
 	{
+		_cursorStartPos = _cursor.transform.position;
+		_backgroundStartPos = _background.transform.position;
 		_radius = _background.GetComponent<RectTransform>().sizeDelta.y / 3;
 	}
 
@@ -32,7 +37,8 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
 	public void OnPointerUp(PointerEventData eventData)
 	{
-		_cursor.transform.position = _touchPos;
+		_cursor.transform.position = _cursorStartPos;
+		_background.transform.position = _backgroundStartPos;
 
 		GameManager.Instance.JoystickDir = Vector2.zero;
 
