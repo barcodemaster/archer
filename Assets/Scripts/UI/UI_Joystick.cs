@@ -45,6 +45,16 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 		//Debug.Log("OnPointerUp");
 	}
 
+	/// <summary>
+	/// 외부에서 강제로 조이스틱 상태를 리셋한다 (레벨업 등 UI 전환 시 사용).
+	/// </summary>
+	public void ForceReset()
+	{
+		_cursor.transform.position = _cursorStartPos;
+		_background.transform.position = _backgroundStartPos;
+		GameManager.Instance.JoystickDir = Vector2.zero;
+	}
+
 	public void OnDrag(PointerEventData eventData)
 	{
 		Vector2 touchDir = (eventData.position - _touchPos);

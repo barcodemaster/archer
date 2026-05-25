@@ -394,13 +394,16 @@ MonoBehaviour:
   _damage: 10
   _contactDamageCooldown: 1.5
   _snapToGroundOffset: {x: 0, y: 0.5, z: 0}
+  _triggerColliderCenter: {x: 0, y: 0, z: 0}
   _physicsRadius: 0.5
   _physicsHeight: 1.6
   _weight: 1
   _overlapWithPlayer: 0
   _immovable: 1
+  _isBoss: 0
+  _expReward: 20
   _attackCooldown: 3
-  _projectilePrefab: {fileID: 8943792320006226267, guid: e50d05be689c2b24eaaa9328a7d8caf7, type: 3}
+  _projectilePrefab: {fileID: 1299517709853501803, guid: bdfe2cd65b6555347a2e46751b87ddfb, type: 3}
   _scatterRadius: 1.5
   _projectileCount: 3
   _projectileInterval: 0.3

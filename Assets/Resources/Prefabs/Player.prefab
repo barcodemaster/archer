@@ -2847,7 +2847,7 @@ GameObject:
   - component: {fileID: -4021597620276024086}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3029,10 +3029,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 463e026c32226f64fab10207b0919f31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  _moveSpeed: 3
+  _moveSpeed: 5
   _rotateSpeed: 360
   _maxHp: 1000
-  _attackAnimSpeed: 1
+  _attackAnimSpeed: 2
   _attackFireTime: 0.3
   _attackDamage: 50
   _projectilePrefab: {fileID: 4973453768417426525, guid: 30460ff290864f740a94ac08b736a3c2, type: 3}
@@ -3054,7 +3054,7 @@ MonoBehaviour:
   _multiShotLevel: 0
   _piercingLevel: 0
   _headshotLevel: 0
-  _wallBounceLevel: 0
+  _wallBounceLevel: 1
   _ricochetLevel: 0
   _diagonalArrowLevel: 0
   _sideArrowLevel: 0

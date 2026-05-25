@@ -13138,7 +13138,10 @@ MonoBehaviour:
   - {fileID: 768083801442284221, guid: 1819f39e18359c84dba1d64815be12f6, type: 3}
   - {fileID: 7120400216219614996, guid: 22bf763b1adc6d449a4a977b879ef390, type: 3}
   - {fileID: 1845742921716089003, guid: 20818fda9cf85f94ca4d9803d50fb8d8, type: 3}
-  _exitDoorPrefab: {fileID: 6210714803172150702, guid: 7c64161c0a6da7a49b576dcc18da2029, type: 3}
+  _exitDoorPrefab: {fileID: 6721931059143736564, guid: 676583f0eac74944e966b7e528991c41, type: 3}
+  _backgroundBlockPrefab: {fileID: 1551819423767944592, guid: 4dac94d003cc763488d5431ece96921e, type: 3}
+  _backgroundExtent: 10
+  _backgroundYOffset: -0.5
   _floorThickness: 0.1
 --- !u!1 &5821082263301634829
 GameObject:
@@ -15242,6 +15245,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a1b12af211399d40b49cc7038f561d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExitDoor
+  _openDoorPrefab: {fileID: 0}
+  _openDelay: 1.5
+  _lightIntensity: 3
+  _lightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &6444858308479931910
 GameObject:
   m_ObjectHideFlags: 0

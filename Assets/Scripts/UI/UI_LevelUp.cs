@@ -14,14 +14,28 @@ public class UI_LevelUp : MonoBehaviour
 	[Header("Roulette")]
 	[SerializeField] private float _spinDuration = 2.0f;
 	[SerializeField] private float _stopInterval = 0.5f;
+	[SerializeField] private float _delayShowPanel = 1.5f;
 
-	private Queue<int> _pendingLevelUps = new Queue<int>();
+private Queue<int> _pendingLevelUps = new Queue<int>();
 	private bool _isShowing = false;
+
+	private int _tapCount;
+	private bool _isAnimating;
+	private Coroutine _rouletteCoroutine;
 
 	private void Start()
 	{
 		if (_panel != null)
+		{
 			_panel.SetActive(false);
+
+			// 패널 탭 감지용 Button 등록
+			UnityEngine.UI.Button panelBtn = _panel.GetComponent<UnityEngine.UI.Button>();
+			if (panelBtn == null)
+				panelBtn = _panel.AddComponent<UnityEngine.UI.Button>();
+			panelBtn.transition = UnityEngine.UI.Selectable.Transition.None;
+			panelBtn.onClick.AddListener(OnPanelTapped);
+		}
 
 		ExpManager.Instance.OnLevelUp += OnLevelUp;
 
@@ -42,34 +56,78 @@ public class UI_LevelUp : MonoBehaviour
 	{
 		_pendingLevelUps.Enqueue(level);
 		if (!_isShowing)
-			Show(_pendingLevelUps.Dequeue());
+		{
+			gameObject.SetActive(true);
+			StartCoroutine(ShowDelay());
+		}
+	}
+
+	private IEnumerator ShowDelay()
+	{
+		yield return new WaitForSeconds(_delayShowPanel);
+
+		Show(_pendingLevelUps.Dequeue());
 	}
 
 	private void Show(int level)
 	{
 		_isShowing = true;
-		_panel.SetActive(true);
 		UIManager.Instance.ShowLevelUp();
+		_panel.SetActive(true);
 		Time.timeScale = 0f;
 		GameManager.Instance.IsPaused = true;
+
+		// 패널이 열리는 시점에 EventSystem 리셋 (마우스 pressed/dragged 상태 제거)
+		UIManager.Instance.ResetEventSystem();
 
 		if (_titleText != null) _titleText.text = "레벨 업그레이드!";
 		if (_levelText != null) _levelText.text = $"레벨 {level}";
 		if (_subtitleText != null) _subtitleText.text = "새로운 능력을 선택하세요!";
 
-		StartCoroutine(RouletteCoroutine());
-	}
-
-	private IEnumerator RouletteCoroutine()
-	{
+		// 슬롯 세팅 + 스핀을 Show()에서 직접 시작 (프레임 딜레이 제거)
 		List<UpgradeInfo> picks = UpgradeDatabase.PickRandom(3);
-
 		for (int i = 0; i < _slots.Length; i++)
 		{
 			_slots[i].SetUpgrade(picks[i]);
 			_slots[i].StartSpin();
 		}
 
+		_tapCount = 0;
+		_isAnimating = true;
+		_rouletteCoroutine = StartCoroutine(RouletteStopCoroutine());
+	}
+
+	/// <summary>
+	/// 패널 탭 시 호출. 애니메이션 중 2회 이상 탭하면 스킵한다.
+	/// </summary>
+	public void OnPanelTapped()
+	{
+		if (!_isAnimating) return;
+		_tapCount++;
+		if (_tapCount >= 2)
+			SkipAnimation();
+	}
+
+	/// <summary>
+	/// 룰렛 애니메이션을 즉시 종료하고 최종 결과를 표시한다.
+	/// </summary>
+	private void SkipAnimation()
+	{
+		if (_rouletteCoroutine != null)
+		{
+			StopCoroutine(_rouletteCoroutine);
+			_rouletteCoroutine = null;
+		}
+		_isAnimating = false;
+		for (int i = 0; i < _slots.Length; i++)
+		{
+			_slots[i].StopSpin();
+			_slots[i].SetInteractable(true);
+		}
+	}
+
+	private IEnumerator RouletteStopCoroutine()
+	{
 		yield return new WaitForSecondsRealtime(_spinDuration);
 
 		for (int i = 0; i < _slots.Length; i++)
@@ -81,6 +139,9 @@ public class UI_LevelUp : MonoBehaviour
 
 		for (int i = 0; i < _slots.Length; i++)
 			_slots[i].SetInteractable(true);
+
+		_isAnimating = false;
+		_rouletteCoroutine = null;
 	}
 
 	private void OnSlotSelected(int idx)

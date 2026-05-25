@@ -42,16 +42,16 @@ public class Define
 
 	public enum EUpgradeType
 	{
-		AttackSpeed,
-		FrontArrow,
-		MultiShot,
-		Piercing,
-		Headshot,
-		DiagonalArrow,
-		WallBounce,
-		SideArrow,
-		Ricochet,
-		BackArrow,
+		AttackSpeed,	// 공격속도
+		FrontArrow,		// 전방화살
+		MultiShot,		// 멀티 샷
+		Piercing,		// 관통 샷
+		Headshot,		// 헤드 샷
+		DiagonalArrow,	// 사선 화살
+		WallBounce,		// 벽 반사
+		SideArrow,		// 측면 화살
+		Ricochet,		// 반동
+		BackArrow,		// 후방 화살
 	}
 
 	public static int IDLE = Animator.StringToHash("Idle");

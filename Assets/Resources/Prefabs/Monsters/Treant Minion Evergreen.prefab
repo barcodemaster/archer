@@ -951,13 +951,15 @@ MonoBehaviour:
   _weight: 1
   _overlapWithPlayer: 0
   _immovable: 0
+  _isBoss: 0
+  _expReward: 20
   _jumpIntervalMin: 2
   _jumpIntervalMax: 4
   _jumpDistance: 3
   _jumpHeight: 1.5
   _jumpDuration: 0.6
   _attackDelay: 0.2
-  _projectilePrefab: {fileID: 8943792320006226267, guid: 3056a1aaf23806a41a9ae47e568517a1, type: 3}
+  _projectilePrefab: {fileID: 1299517709853501803, guid: 7a43e6414e56c534ea07aadc3bdf1589, type: 3}
   _projectileDamage: 15
 --- !u!136 &4294363834154297978
 CapsuleCollider:

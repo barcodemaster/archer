@@ -8,6 +8,7 @@ public class UpgradeInfo
 	public string name;
 	public string description;
 	public Sprite icon;
+	public int maxLevel = 1;
 }
 
 public static class UpgradeDatabase
@@ -36,6 +37,7 @@ public static class UpgradeDatabase
 				name = cols[1].Trim(),
 				description = cols[2].Trim(),
 				icon = atlas != null ? atlas.GetSprite(cols[3].Trim()) : null,
+				maxLevel = cols.Length > 4 && int.TryParse(cols[4].Trim(), out int ml) ? ml : 1,
 			});
 		}
 
@@ -65,7 +67,7 @@ public static class UpgradeDatabase
 		PlayerUpgrade playerUpgrade = Object.FindAnyObjectByType<PlayerUpgrade>();
 		foreach (var info in _all)
 		{
-			if (playerUpgrade != null && playerUpgrade.GetLevel(info.type) >= 1)
+			if (playerUpgrade != null && playerUpgrade.GetLevel(info.type) >= info.maxLevel)
 				continue;
 			pool.Add(info);
 		}

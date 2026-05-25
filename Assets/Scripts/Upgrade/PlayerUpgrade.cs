@@ -39,7 +39,9 @@ public class PlayerUpgrade : MonoBehaviour
 
 	public void AddUpgrade(EUpgradeType type)
 	{
-		if (GetLevel(type) >= 1) return;
+		UpgradeInfo info = UpgradeDatabase.GetInfo(type);
+		int maxLevel = info != null ? info.maxLevel : 1;
+		if (GetLevel(type) >= maxLevel) return;
 
 		switch (type)
 		{

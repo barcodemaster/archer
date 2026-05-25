@@ -20,6 +20,10 @@ public class ExpManager : Singleton<ExpManager>
 			_currentExp -= ExpToNextLevel;
 			_level++;
 			OnLevelUp?.Invoke(_level);
+
+			GameObject playerObj = GameObject.FindWithTag("Player");
+			if (playerObj != null)
+				LevelUpTextSpawner.Spawn(playerObj.transform.position + Vector3.up * 2f);
 		}
 		OnExpChanged?.Invoke(_currentExp, ExpToNextLevel);
 	}

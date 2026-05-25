@@ -1,11 +1,11 @@
-type,name,description,icon
-AttackSpeed,공격 속도,공격 속도가 15% 증가합니다,icon_attack_speed
-FrontArrow,전방 화살,전방에 화살을 추가합니다,icon_front_arrow
-MultiShot,멀티샷,연속으로 화살을 발사합니다,icon_multishot
-Piercing,관통,화살이 적을 관통합니다,icon_piercing
-Headshot,헤드샷,즉사 확률 8% 증가,icon_headshot
-DiagonalArrow,대각선 화살,45도 방향으로 화살 추가,icon_diagonal
-WallBounce,벽 반사,화살이 벽에 반사됩니다,icon_wallbounce
-SideArrow,측면 화살,90도 방향으로 화살 추가,icon_side_arrow
-Ricochet,도탄,적 사이를 튕기는 화살,icon_ricochet
-BackArrow,후방 화살,뒤로도 화살을 발사합니다,icon_back_arrow
+type,name,description,icon,maxLevel
+AttackSpeed,공격 속도 부스트,공격 속도가 소폭 상승합니다.,AttackSpeedBoost,10
+FrontArrow,전방 화살 +1,앞으로 발사되는 화살이 추가됩니다.,FrontArrow,3
+MultiShot,멀티 샷,매번 화살 하나를 추가로 발사합니다.,MultiShot,3
+Piercing,관통 샷,화살이 적을 관통합니다.,Piercing,1
+Headshot,헤드 샷,낮은 확률로 적을 즉사시킵니다.,Headshot,1
+DiagonalArrow,사선 화살 +1,대각선 방향으로 화살을 각각 1발 발사합니다.,DiagonalArrow,1
+WallBounce,벽 반사,화살이 벽에 맞으면 튕겨납니다.,WallBounce,1
+SideArrow,측면 화살,화살이 좌우로도 발사됩니다.,SideArrow,1
+Ricochet,반동,명중한 화살이 주변 몬스터로 향합니다.,Recochet,1
+BackArrow,후방 화살 +1,화살이 뒤로도 발사됩니다.,BackArrow,1

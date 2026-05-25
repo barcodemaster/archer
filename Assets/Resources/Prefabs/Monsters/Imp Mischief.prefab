@@ -951,10 +951,11 @@ MonoBehaviour:
   _overlapWithPlayer: 0
   _immovable: 0
   _isBoss: 1
+  _expReward: 20
   _chaseSpeed: 2.5
   _chaseDurationMin: 2
   _chaseDurationMax: 4
-  _fireballPrefab: {fileID: 8943792320006226267, guid: 8d933d8dc827afd4d9735e07a5512b04, type: 3}
+  _fireballPrefab: {fileID: 1299517709853501803, guid: 8d933d8dc827afd4d9735e07a5512b04, type: 3}
   _fireballSpreadAngle: 20
   _fireballWindup: 0.5
   _headbuttSpeed: 20

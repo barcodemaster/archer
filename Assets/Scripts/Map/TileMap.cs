@@ -56,6 +56,11 @@ public class TileMap : MonoBehaviour
 	[Header("Exit Door")]
 	[SerializeField] private GameObject _exitDoorPrefab;
 
+	[Header("Background")]
+	[SerializeField] private GameObject _backgroundBlockPrefab;
+	[SerializeField] private int _backgroundExtent = 5;
+	[SerializeField] private float _backgroundYOffset = -0.5f;
+
 	[Header("Settings")]
 	[SerializeField] private float _floorThickness = 0.1f;
 
@@ -242,6 +247,39 @@ public class TileMap : MonoBehaviour
 		}
 
 		AddBoundaryColliders(container);
+		GenerateBackgroundBlocks(container);
+	}
+
+	/// <summary>
+	/// 맵 바깥에 낮은 블록 프리팹을 깔아 배경을 생성한다.
+	/// </summary>
+	private void GenerateBackgroundBlocks(Transform container)
+	{
+		if (_backgroundBlockPrefab == null) return;
+
+		for (int z = -_backgroundExtent; z < _height + _backgroundExtent; z++)
+		{
+			for (int x = -_backgroundExtent; x < _width + _backgroundExtent; x++)
+			{
+				// 맵 내부 좌표는 스킵
+				if (x >= 0 && x < _width && z >= 0 && z < _height) continue;
+
+				GameObject block = Instantiate(_backgroundBlockPrefab, container);
+				block.name = $"BgBlock_{x}_{z}";
+				block.transform.position = GridToWorld(x, z) + Vector3.up * _backgroundYOffset;
+
+				// 콜라이더 제거
+				Collider col = block.GetComponentInChildren<Collider>();
+				if (col != null)
+				{
+					if (Application.isPlaying) Destroy(col);
+					else DestroyImmediate(col);
+				}
+
+				// Static Batching 활용
+				block.gameObject.isStatic = true;
+			}
+		}
 	}
 
 	/// <summary>

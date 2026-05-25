@@ -78,7 +78,10 @@ public class ProjectileBase : MonoBehaviour
 		_ricochetCount = data.ricochetCount;
 		_ricochetRadius = data.ricochetRadius;
 		if (data.wallBounce)
+		{
 			_bounceEnabled = true;
+			_velocity = transform.forward * _speed;
+		}
 	}
 
 	/// <summary>
@@ -186,7 +189,7 @@ public class ProjectileBase : MonoBehaviour
 		}
 
 		if (_isPlayerProjectile && _spinSpeed > 0f)
-			transform.Rotate(Vector3.forward, _spinSpeed * Time.deltaTime, Space.Self);
+			transform.Rotate(Vector3.up, _spinSpeed * Time.deltaTime, Space.Self);
 	}
 
 	private void UpdateArc()

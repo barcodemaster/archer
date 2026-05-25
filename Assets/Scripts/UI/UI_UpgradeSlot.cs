@@ -15,6 +15,16 @@ public class UI_UpgradeSlot : MonoBehaviour
 
 	public UpgradeInfo Assigned => _assigned;
 
+	/// <summary>
+	/// 슬롯의 표시 내용을 초기화한다.
+	/// </summary>
+	public void Clear()
+	{
+		if (_nameText != null) _nameText.text = "";
+		if (_iconImage != null) _iconImage.sprite = null;
+		if (_descText != null) _descText.text = "";
+	}
+
 	public void SetUpgrade(UpgradeInfo info)
 	{
 		_assigned = info;
@@ -45,13 +55,12 @@ public class UI_UpgradeSlot : MonoBehaviour
 	private IEnumerator SpinCoroutine()
 	{
 		UpgradeInfo[] all = UpgradeDatabase.GetAll();
-		int index = 0;
 		float elapsed = 0f;
 
 		while (true)
 		{
-			Display(all[index % all.Length]);
-			index++;
+			int randomIndex = Random.Range(0, all.Length);
+			Display(all[randomIndex]);
 			float interval = 0.05f + elapsed * 0.02f;
 			float waited = 0f;
 			while (waited < interval)

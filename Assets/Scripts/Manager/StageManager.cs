@@ -10,9 +10,13 @@ public class StageManager : Singleton<StageManager>
 	private TileMap _tileMap;
 	public TileMap TileMap => _tileMap;
 
+	[Header("Exp Orb")]
+	[SerializeField] private GameObject _expOrbPrefab;
+
 	private GameObject _exitDoor;
 	private int _currentStageIndex = 0;
 	private List<MonsterBase> _aliveMonsters = new List<MonsterBase>();
+	private List<ExpOrb> _spawnedExpOrbs = new List<ExpOrb>();
 
 	private void Start()
 	{
@@ -51,6 +55,11 @@ public class StageManager : Singleton<StageManager>
 		foreach (var m in _aliveMonsters)
 			if (m != null) Destroy(m.gameObject);
 		_aliveMonsters.Clear();
+
+		// 남은 ExpOrb 정리
+		foreach (var orb in _spawnedExpOrbs)
+			if (orb != null) Destroy(orb.gameObject);
+		_spawnedExpOrbs.Clear();
 
 		// 새 TileMap 생성
 		_currentTileMapInstance = Instantiate(_stageTileMapPrefabs[index]);
@@ -99,20 +108,52 @@ public class StageManager : Singleton<StageManager>
 	public void OnMonsterDead(MonsterBase monster)
 	{
 		_aliveMonsters.Remove(monster);
-		ExpManager.Instance.AddExp(monster.ExpReward);
+		SpawnExpOrb(monster.transform.position, monster.ExpReward);
 		if (_aliveMonsters.Count == 0)
 			OpenExitDoor();
 	}
 
 	/// <summary>
-	/// 출구 문을 활성화한다.
+	/// 출구 문을 활성화하고 대기 중인 ExpOrb를 수집한다.
 	/// </summary>
 	private void OpenExitDoor()
 	{
+		CollectAllExpOrbs();
+
 		if (_exitDoor == null) return;
 		ExitDoor door = _exitDoor.GetComponent<ExitDoor>();
 		if (door != null)
 			door.OpenDoor();
+	}
+
+	/// <summary>
+	/// 대기 중인 모든 ExpOrb에 수집 시작을 알린다.
+	/// </summary>
+	private void CollectAllExpOrbs()
+	{
+		foreach (var orb in _spawnedExpOrbs)
+			if (orb != null) orb.StartCollect();
+	}
+
+	/// <summary>
+	/// 지정 위치에 경험치 오브를 하나 생성한다.
+	/// </summary>
+	private void SpawnExpOrb(Vector3 pos, int exp)
+	{
+		if (_expOrbPrefab != null)
+		{
+			GameObject orb = Instantiate(_expOrbPrefab, pos, Quaternion.identity);
+			ExpOrb expOrb = orb.GetComponent<ExpOrb>();
+			if (expOrb != null)
+			{
+				expOrb.Init(exp);
+				_spawnedExpOrbs.Add(expOrb);
+			}
+		}
+		else
+		{
+			ExpManager.Instance.AddExp(exp);
+		}
 	}
 
 	/// <summary>
