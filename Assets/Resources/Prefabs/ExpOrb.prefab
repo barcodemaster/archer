@@ -128,4 +128,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExpOrb
   _flySpeed: 4
-  _arriveDistance: 0.2
+  _arriveDistance: 0.3
+  _bobAmplitude: 0.2
+  _bobFrequency: 2

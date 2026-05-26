@@ -3052,13 +3052,25 @@ MonoBehaviour:
   _attackSpeedLevel: 0
   _frontArrowLevel: 0
   _multiShotLevel: 0
-  _piercingLevel: 0
-  _headshotLevel: 0
+  _piercingLevel: 1
+  _headshotLevel: 1
   _wallBounceLevel: 1
-  _ricochetLevel: 0
+  _ricochetLevel: 1
   _diagonalArrowLevel: 0
   _sideArrowLevel: 0
   _backArrowLevel: 0
+  _criticalMasterLevel: 0
+  _attackBoostLevel: 0
+  _fastGrowthLevel: 0
+  _hpBoostLevel: 0
+  _rageLevel: 0
+  _slowProjectileLevel: 0
+  _bloodThirstLevel: 0
+  _wallPassLevel: 0
+  _waterWalkerLevel: 0
+  _dwarfLevel: 0
+  _giantLevel: 0
+  _extraLifeLevel: 0
 --- !u!1 &8206070634150816031
 GameObject:
   m_ObjectHideFlags: 0

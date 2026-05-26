@@ -213,14 +213,26 @@ public class PlayerController : MonoBehaviour
 	{
 		List<Vector3> directions = BuildDirections(baseDir);
 
+		float baseDamage = _attackDamage;
+		baseDamage *= _upgrade.AttackBoostMultiplier;
+		baseDamage *= _upgrade.GiantDamageMultiplier;
+		if (_upgrade.HasRage)
+		{
+			float hpRatio = _currentHp / _maxHp;
+			baseDamage *= 1f + (1f - hpRatio) * 0.5f;
+		}
+
 		ProjectileInitData data = new ProjectileInitData
 		{
-			damage = _attackDamage,
+			damage = baseDamage,
 			isPiercing = _upgrade.IsPiercing,
 			headshotChance = _upgrade.HeadshotChance,
 			wallBounce = _upgrade.IsWallBounce,
 			ricochetCount = _upgrade.RicochetCount,
 			ricochetRadius = _upgrade.RicochetRadius,
+			critChance = _upgrade.CritChance,
+			critDamageMin = _upgrade.CritDamageMin,
+			critDamageMax = _upgrade.CritDamageMax,
 		};
 
 		foreach (Vector3 dir in directions)
@@ -288,10 +300,112 @@ public class PlayerController : MonoBehaviour
 
 		if (_currentHp <= 0f)
 		{
+			if (_upgrade.HasExtraLife)
+			{
+				_upgrade.ConsumeExtraLife();
+				_currentHp = _maxHp;
+				if (_hpBar != null)
+					_hpBar.SetHP(_currentHp, _maxHp);
+				StartCoroutine(ReviveSequence());
+				return;
+			}
+
 			_currentHp = 0f;
 			State = EState.Die;
-			Debug.Log("Player died!");
 		}
+	}
+
+	/// <summary>
+	/// HP를 회복한다. 최대 HP를 넘기지 않는다.
+	/// </summary>
+	public void Heal(float amount)
+	{
+		if (_state == EState.Die) return;
+		_currentHp = Mathf.Min(_currentHp + amount, _maxHp);
+		if (_hpBar != null)
+			_hpBar.SetHP(_currentHp, _maxHp);
+	}
+
+	/// <summary>
+	/// 최대 HP를 증가시키고 일정량 즉시 회복한다.
+	/// </summary>
+	public void BoostHp(float addMax, float healAmount)
+	{
+		_maxHp += addMax;
+		_currentHp = Mathf.Min(_currentHp + healAmount, _maxHp);
+		if (_hpBar != null)
+			_hpBar.SetHP(_currentHp, _maxHp);
+	}
+
+	/// <summary>
+	/// 능력 선택 시 즉시 효과를 적용한다.
+	/// </summary>
+	public void ApplyUpgradeEffect(EUpgradeType type)
+	{
+		switch (type)
+		{
+			case EUpgradeType.WallPass:
+				if (_passability != null)
+					_passability.AddFlag(ETilePassFlag.WallPass);
+				ApplyWallPassCollisions();
+				break;
+			case EUpgradeType.WaterWalker:
+				if (_passability != null)
+					_passability.AddFlag(ETilePassFlag.WaterWalk);
+				ApplyWaterWalkCollisions();
+				break;
+			case EUpgradeType.Dwarf:
+				transform.localScale *= 0.9f;
+				break;
+			case EUpgradeType.Giant:
+				transform.localScale *= 1.1f;
+				break;
+			case EUpgradeType.HpBoost:
+				BoostHp(200f, 100f);
+				break;
+			case EUpgradeType.FastGrowth:
+				ExpManager.Instance.SetMaxLevel(13);
+				break;
+		}
+	}
+
+	/// <summary>
+	/// 비경계 BlockObstacle의 콜라이더를 트리거로 전환하여 WallPass 통과를 허용한다.
+	/// </summary>
+	public void ApplyWallPassCollisions()
+	{
+		BlockObstacle[] blocks = FindObjectsByType<BlockObstacle>(FindObjectsSortMode.None);
+		foreach (BlockObstacle block in blocks)
+		{
+			if (block.IsBoundary) continue;
+			Collider col = block.GetComponent<Collider>();
+			if (col != null)
+				col.isTrigger = true;
+		}
+	}
+
+	/// <summary>
+	/// WaterObstacle의 콜라이더를 트리거로 전환하여 WaterWalker 통과를 허용한다.
+	/// </summary>
+	public void ApplyWaterWalkCollisions()
+	{
+		WaterObstacle[] waters = FindObjectsByType<WaterObstacle>(FindObjectsSortMode.None);
+		foreach (WaterObstacle water in waters)
+		{
+			Collider col = water.GetComponent<Collider>();
+			if (col != null)
+				col.isTrigger = true;
+		}
+	}
+
+	/// <summary>
+	/// Extra Life 부활 연출. 슬로우모션 3초 후 정상 속도로 복귀.
+	/// </summary>
+	private IEnumerator ReviveSequence()
+	{
+		Time.timeScale = 0.3f;
+		yield return new WaitForSecondsRealtime(3f);
+		Time.timeScale = 1f;
 	}
 
 	/// <summary>

@@ -34,12 +34,16 @@ public class ProjectileBase : MonoBehaviour
 	private bool _hasHit;
 	private bool _destroyed;
 	private float _timer;
+	private float _baseSpeed;
 
 	// Upgrade fields
 	private bool _isPiercing;
 	private float _headshotChance;
 	private int _ricochetCount;
 	private float _ricochetRadius;
+	private float _critChance;
+	private float _critDamageMin;
+	private float _critDamageMax;
 	private HashSet<int> _hitMonsterIds = new();
 
 	// Arc
@@ -57,6 +61,7 @@ public class ProjectileBase : MonoBehaviour
 	private void Awake()
 	{
 		_defaultBounceEnabled = _bounceEnabled;
+		_baseSpeed = _speed;
 	}
 
 	/// <summary>
@@ -65,6 +70,8 @@ public class ProjectileBase : MonoBehaviour
 	public void Init(float damage)
 	{
 		_damage = damage;
+		if (_bounceEnabled)
+			_velocity = transform.forward * _speed;
 	}
 
 	/// <summary>
@@ -77,6 +84,9 @@ public class ProjectileBase : MonoBehaviour
 		_headshotChance = data.headshotChance;
 		_ricochetCount = data.ricochetCount;
 		_ricochetRadius = data.ricochetRadius;
+		_critChance = data.critChance;
+		_critDamageMin = data.critDamageMin;
+		_critDamageMax = data.critDamageMax;
 		if (data.wallBounce)
 		{
 			_bounceEnabled = true;
@@ -98,6 +108,16 @@ public class ProjectileBase : MonoBehaviour
 	{
 		ResetState();
 
+		// 몬스터 발사체 속도 감속
+		if (!_isPlayerProjectile)
+		{
+			PlayerUpgrade upgrade = Object.FindAnyObjectByType<PlayerUpgrade>();
+			if (upgrade != null)
+				_speed = _baseSpeed * upgrade.SlowProjectileMultiplier;
+			else
+				_speed = _baseSpeed;
+		}
+
 		if (_bounceEnabled)
 			_velocity = transform.forward * _speed;
 
@@ -117,8 +137,12 @@ public class ProjectileBase : MonoBehaviour
 		_headshotChance = 0f;
 		_ricochetCount = 0;
 		_ricochetRadius = 0f;
+		_critChance = 0f;
+		_critDamageMin = 0f;
+		_critDamageMax = 0f;
 		_velocity = Vector3.zero;
 		_bounceEnabled = _defaultBounceEnabled;
+		_speed = _baseSpeed;
 		_lifeCoroutine = null;
 	}
 
@@ -238,12 +262,18 @@ public class ProjectileBase : MonoBehaviour
 				if (_headshotChance > 0f && !monster.IsBoss && Random.value < _headshotChance)
 				{
 					monster.InstantKill();
+					DamageTextSpawner.SpawnHeadshot(monster.transform.position + Vector3.up);
 				}
 				else
 				{
+					float finalDamage = _damage;
+					bool isCrit = _critChance > 0f && Random.value < _critChance;
+					if (isCrit)
+						finalDamage *= Random.Range(_critDamageMin, _critDamageMax);
+
 					if (_knockbackForce > 0f)
 						monster.Knockback(transform.forward, _knockbackForce);
-					monster.TakeDamage(_damage);
+					monster.TakeDamage(finalDamage, isCrit);
 				}
 
 				// 반동(리코셰) > 관통 > 파괴

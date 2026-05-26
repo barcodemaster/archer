@@ -121,7 +121,7 @@ public abstract class MonsterBase : MonoBehaviour
 	/// <summary>
 	/// 데미지를 받고 HP가 0 이하이면 사망 처리한다.
 	/// </summary>
-	public void TakeDamage(float damage)
+	public void TakeDamage(float damage, bool isCritical = false)
 	{
 		if (_state == EState.Die)
 			return;
@@ -129,7 +129,10 @@ public abstract class MonsterBase : MonoBehaviour
 		_currentHp -= damage;
 
 		CameraController.Instance?.Shake(0.15f, 0.15f);
-		DamageTextSpawner.Spawn(transform.position + Vector3.up, damage, false);
+		if (isCritical)
+			DamageTextSpawner.SpawnCritical(transform.position + Vector3.up, damage);
+		else
+			DamageTextSpawner.Spawn(transform.position + Vector3.up, damage, false);
 
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
@@ -148,11 +151,9 @@ public abstract class MonsterBase : MonoBehaviour
 	{
 		if (_state == EState.Die) return;
 
-		float killDamage = _maxHp;
 		_currentHp = 0f;
 
 		CameraController.Instance?.Shake(0.15f, 0.15f);
-		DamageTextSpawner.Spawn(transform.position + Vector3.up, killDamage, false);
 
 		if (_hpBar != null)
 			_hpBar.SetHP(0f, _maxHp);

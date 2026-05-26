@@ -42,16 +42,28 @@ public class Define
 
 	public enum EUpgradeType
 	{
-		AttackSpeed,	// ���ݼӵ�
-		FrontArrow,		// ����ȭ��
-		MultiShot,		// ��Ƽ ��
-		Piercing,		// ���� ��
-		Headshot,		// ��� ��
-		DiagonalArrow,	// �缱 ȭ��
-		WallBounce,		// �� �ݻ�
-		SideArrow,		// ���� ȭ��
-		Ricochet,		// �ݵ�
-		BackArrow,		// �Ĺ� ȭ��
+		AttackSpeed,	// 공격속도
+		FrontArrow,		// 전방 화살
+		MultiShot,		// 멀티 샷
+		Piercing,		// 관통
+		Headshot,		// 헤드 샷
+		DiagonalArrow,	// 사선 화살
+		WallBounce,		// 벽 반사
+		SideArrow,		// 측면 화살
+		Ricochet,		// 반동
+		BackArrow,		// 후방 화살
+		CriticalMaster,	// 크리티컬 마스터
+		AttackBoost,	// 공격 부스트
+		FastGrowth,		// 빠른 성장
+		HpBoost,		// HP 부스트
+		WallPass,		// 장애물 통과
+		WaterWalker,	// 워터 워커
+		Dwarf,			// 난쟁이
+		Giant,			// 거인
+		Rage,			// 분노
+		ExtraLife,		// Extra Life
+		SlowProjectile,	// 느린 발사체
+		BloodThirst,	// 피의 갈증
 	}
 
 	public static int IDLE = Animator.StringToHash("Idle");

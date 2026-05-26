@@ -153,6 +153,7 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
 			if (upgrade != null)
 				upgrade.AddUpgrade(selected.type);
+			player.ApplyUpgradeEffect(selected.type);
 		}
 
 		if (_pendingLevelUps.Count > 0)

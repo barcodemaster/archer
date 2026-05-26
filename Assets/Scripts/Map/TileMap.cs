@@ -128,7 +128,8 @@ public class TileMap : MonoBehaviour
 
 		ETileType tileType = GetTile(grid.x, grid.y);
 		if (!IsTilePassable(tileType, flags)) return false;
-		if (GetBlockIndex(grid.x, grid.y) >= 0) return false;
+		if (GetBlockIndex(grid.x, grid.y) >= 0)
+			return (flags & ETilePassFlag.WallPass) != 0;
 		return true;
 	}
 
@@ -209,6 +210,7 @@ public class TileMap : MonoBehaviour
 					BoxCollider bc = waterWall.AddComponent<BoxCollider>();
 					bc.size = new Vector3(1f, 2f, 1f);
 					bc.isTrigger = false;
+					waterWall.AddComponent<WaterObstacle>();
 				}
 
 				// Wall 타일에 물리 차단용 콜라이더 추가
@@ -312,7 +314,8 @@ public class TileMap : MonoBehaviour
 		BoxCollider bc = wall.AddComponent<BoxCollider>();
 		bc.size = size;
 		bc.isTrigger = false;
-		wall.AddComponent<BlockObstacle>();
+		BlockObstacle obstacle = wall.AddComponent<BlockObstacle>();
+		obstacle.IsBoundary = true;
 	}
 
 	/// <summary>

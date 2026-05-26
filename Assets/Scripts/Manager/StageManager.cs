@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,10 +15,22 @@ public class StageManager : Singleton<StageManager>
 	[Header("Exp Orb")]
 	[SerializeField] private GameObject _expOrbPrefab;
 
+	[Header("Stage Transition")]
+	[SerializeField] private float _fadeDuration = 0.5f;
+
+	[Header("HP Heart")]
+	[SerializeField] private GameObject _hpHeartPrefab;
+	[SerializeField] private float _hpHeartDropChance = 0.15f;
+
+	public int CurrentStageIndex => _currentStageIndex;
+	public int TotalStageCount => _stageTileMapPrefabs?.Count ?? 0;
+	public event Action OnExitDoorOpened;
+
 	private GameObject _exitDoor;
 	private int _currentStageIndex = 0;
 	private List<MonsterBase> _aliveMonsters = new List<MonsterBase>();
 	private List<ExpOrb> _spawnedExpOrbs = new List<ExpOrb>();
+	private List<HPHeart> _spawnedHpHearts = new List<HPHeart>();
 
 	private void Start()
 	{
@@ -61,6 +75,11 @@ public class StageManager : Singleton<StageManager>
 			if (orb != null) Destroy(orb.gameObject);
 		_spawnedExpOrbs.Clear();
 
+		// 남은 HPHeart 정리
+		foreach (var heart in _spawnedHpHearts)
+			if (heart != null) Destroy(heart.gameObject);
+		_spawnedHpHearts.Clear();
+
 		// 새 TileMap 생성
 		_currentTileMapInstance = Instantiate(_stageTileMapPrefabs[index]);
 		_tileMap = _currentTileMapInstance.GetComponent<TileMap>();
@@ -80,6 +99,20 @@ public class StageManager : Singleton<StageManager>
 					_tileMap.GridToWorld(entry.pos.x, entry.pos.y), Quaternion.LookRotation(Vector3.back));
 				MonsterBase mb = go.GetComponent<MonsterBase>();
 				if (mb != null) _aliveMonsters.Add(mb);
+			}
+		}
+
+		// 플레이어가 WallPass/WaterWalker를 보유하면 새 타일에도 적용
+		PlayerController player = FindAnyObjectByType<PlayerController>();
+		if (player != null)
+		{
+			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
+			if (upgrade != null)
+			{
+				if (upgrade.GetLevel(Define.EUpgradeType.WallPass) > 0)
+					player.ApplyWallPassCollisions();
+				if (upgrade.GetLevel(Define.EUpgradeType.WaterWalker) > 0)
+					player.ApplyWaterWalkCollisions();
 			}
 		}
 
@@ -103,27 +136,51 @@ public class StageManager : Singleton<StageManager>
 	}
 
 	/// <summary>
-	/// 몬스터 사망 시 호출. 모든 몬스터가 죽으면 출구를 연다.
+	/// 몬스터 사망 시 호출. 피의갈증 회복, HP하트 드롭, ExpOrb 스폰.
 	/// </summary>
 	public void OnMonsterDead(MonsterBase monster)
 	{
 		_aliveMonsters.Remove(monster);
 		SpawnExpOrb(monster.transform.position, monster.ExpReward);
+
+		// 피의갈증: 처치 시 HP 회복
+		PlayerController player = FindAnyObjectByType<PlayerController>();
+		if (player != null)
+		{
+			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
+			if (upgrade != null && upgrade.BloodThirstHeal > 0f)
+				player.Heal(upgrade.BloodThirstHeal);
+		}
+
+		// HP하트 드롭
+		SpawnHpHeart(monster.transform.position);
+
 		if (_aliveMonsters.Count == 0)
+		{
+			CollectAllExpOrbs();
+			CollectAllHpHearts();
 			OpenExitDoor();
+		}
 	}
 
 	/// <summary>
-	/// 출구 문을 활성화하고 대기 중인 ExpOrb를 수집한다.
+	/// 출구 문을 활성화한다.
 	/// </summary>
 	private void OpenExitDoor()
 	{
-		CollectAllExpOrbs();
+		StartCoroutine(OpenExitDoorSequence());
+	}
 
-		if (_exitDoor == null) return;
+	private IEnumerator OpenExitDoorSequence()
+	{
+		yield return new WaitForSeconds(1.5f);
+
+		if (_exitDoor == null) yield break;
 		ExitDoor door = _exitDoor.GetComponent<ExitDoor>();
 		if (door != null)
 			door.OpenDoor();
+
+		OnExitDoorOpened?.Invoke();
 	}
 
 	/// <summary>
@@ -133,6 +190,15 @@ public class StageManager : Singleton<StageManager>
 	{
 		foreach (var orb in _spawnedExpOrbs)
 			if (orb != null) orb.StartCollect();
+	}
+
+	/// <summary>
+	/// 대기 중인 모든 HPHeart에 수집 시작을 알린다.
+	/// </summary>
+	private void CollectAllHpHearts()
+	{
+		foreach (var heart in _spawnedHpHearts)
+			if (heart != null) heart.StartCollect();
 	}
 
 	/// <summary>
@@ -157,10 +223,38 @@ public class StageManager : Singleton<StageManager>
 	}
 
 	/// <summary>
-	/// 다음 스테이지로 진행한다.
+	/// 확률적으로 HP하트를 드롭한다.
+	/// </summary>
+	private void SpawnHpHeart(Vector3 pos)
+	{
+		if (_hpHeartPrefab == null) return;
+		if (UnityEngine.Random.value > _hpHeartDropChance) return;
+
+		GameObject go = Instantiate(_hpHeartPrefab, pos, Quaternion.identity);
+		HPHeart heart = go.GetComponent<HPHeart>();
+		if (heart != null)
+		{
+			heart.Init();
+			_spawnedHpHearts.Add(heart);
+		}
+	}
+
+	/// <summary>
+	/// 다음 스테이지로 진행한다. 페이드 전환 효과를 적용한다.
 	/// </summary>
 	public void GoToNextStage()
 	{
-		StartStage(_currentStageIndex + 1);
+		StartCoroutine(StageTransitionSequence(_currentStageIndex + 1));
+	}
+
+	private IEnumerator StageTransitionSequence(int nextIndex)
+	{
+		yield return UIManager.Instance.FadeOut(_fadeDuration);
+
+		UIManager.Instance.HideStageProgress();
+
+		StartStage(nextIndex);
+
+		yield return UIManager.Instance.FadeIn(_fadeDuration);
 	}
 }

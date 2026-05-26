@@ -29,6 +29,17 @@ public class DamageText : MonoBehaviour
 		_tmp.color = _color;
 	}
 
+	/// <summary>
+	/// 커스텀 텍스트와 색상으로 초기화한다.
+	/// </summary>
+	public void Init(string text, Color color)
+	{
+		_tmp = GetComponent<TextMeshPro>();
+		_tmp.text = text;
+		_color = color;
+		_tmp.color = _color;
+	}
+
 	private void Update()
 	{
 		_elapsed += Time.deltaTime;

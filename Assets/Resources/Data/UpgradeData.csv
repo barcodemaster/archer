@@ -9,3 +9,15 @@ WallBounce,벽 반사,화살이 벽에 맞으면 튕겨납니다.,WallBounce,1
 SideArrow,측면 화살,화살이 좌우로도 발사됩니다.,SideArrow,1
 Ricochet,반동,명중한 화살이 주변 몬스터로 향합니다.,Recochet,1
 BackArrow,후방 화살 +1,화살이 뒤로도 발사됩니다.,BackArrow,1
+CriticalMaster,크리티컬 마스터,크리티컬 확률 및 데미지가 증가합니다,CriticalMaster,10
+AttackBoost,공격 부스트,공격력이 강해집니다.,AttackBoost,10
+FastGrowth,빠른 성장,"더 빠른 레벨업, 높아진 최고 Lv.",FastGrowth,1
+HpBoost,HP 부스트,최대 HP가 증가합니다.,HpBoost,10
+WallPass,장애물 통과,이제 장애물을 통과할 수 있습니다.,WallPass,1
+WaterWalker,워터 워커,이제 물 위를 걸을 수 있습니다.,WaterWalker,1
+Dwarf,난쟁이,몸집이 작아져 치명타가 증가합니다.,Dwarf ,1
+Giant,거인,몸집이 커져 공격력이 증가합니다.,Giant,1
+Rage,분노,HP가 낮을 때 더 강한 공격을 합니다.,Rage,1
+ExtraLife,Extra Life,추가 생명을 얻습니다.,ExtraLife,1
+SlowProjectile,느린 발사체,적의 발사체가 느려집니다.,SlowProjectile,1
+BloodThirst,피의 갈증,적을 죽이면 HP가 회복됩니다.,BloodThirst,1

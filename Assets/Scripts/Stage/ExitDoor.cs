@@ -10,6 +10,7 @@ public class ExitDoor : MonoBehaviour
 
 	private GameObject _blocker;
 	private Collider _collider;
+	private bool _triggered;
 
 	private void Start()
 	{
@@ -106,8 +107,10 @@ public class ExitDoor : MonoBehaviour
 
 	private void OnTriggerEnter(Collider other)
 	{
+		if (_triggered) return;
 		if (other.GetComponent<PlayerController>() != null)
 		{
+			_triggered = true;
 			StageManager.Instance.GoToNextStage();
 		}
 	}

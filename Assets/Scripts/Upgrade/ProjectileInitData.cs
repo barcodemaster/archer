@@ -6,4 +6,7 @@ public struct ProjectileInitData
 	public bool wallBounce;
 	public int ricochetCount;
 	public float ricochetRadius;
+	public float critChance;
+	public float critDamageMin;
+	public float critDamageMax;
 }
