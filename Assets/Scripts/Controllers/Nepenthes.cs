@@ -63,6 +63,7 @@ public class Nepenthes : MonsterBase
 	{
 		if (_projectilePrefab == null) return;
 
+		AudioManager.Instance?.PlayMonsterProjectile();
 		Vector3 spawnPos = transform.position + Vector3.up;
 		GameObject go = ObjectPool.Instance.Get(_projectilePrefab);
 		go.transform.position = spawnPos;

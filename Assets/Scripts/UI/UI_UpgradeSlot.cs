@@ -36,7 +36,7 @@ public class UI_UpgradeSlot : MonoBehaviour
 		_spinCoroutine = StartCoroutine(SpinCoroutine());
 	}
 
-	public void StopSpin()
+	public void StopSpin(bool playConfirmSound = true)
 	{
 		if (_spinCoroutine != null)
 		{
@@ -44,6 +44,8 @@ public class UI_UpgradeSlot : MonoBehaviour
 			_spinCoroutine = null;
 		}
 		Display(_assigned);
+		if (playConfirmSound)
+			AudioManager.Instance?.PlayUpgradeSlotConfirm();
 		StartCoroutine(PunchScale());
 	}
 
@@ -61,6 +63,7 @@ public class UI_UpgradeSlot : MonoBehaviour
 		{
 			int randomIndex = Random.Range(0, all.Length);
 			Display(all[randomIndex]);
+			AudioManager.Instance?.PlayUpgradeSlotSpin();
 			float interval = 0.05f + elapsed * 0.02f;
 			float waited = 0f;
 			while (waited < interval)

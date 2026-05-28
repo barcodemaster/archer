@@ -55,6 +55,7 @@ public class ExpOrb : MonoBehaviour
 
 		if (_target == null)
 		{
+			AudioManager.Instance?.PlayExpCollect();
 			ExpManager.Instance.AddExp(_expAmount);
 			Destroy(gameObject);
 			return;
@@ -63,6 +64,7 @@ public class ExpOrb : MonoBehaviour
 		Vector3 dir = (_target.position - transform.position);
 		if (dir.magnitude <= _arriveDistance)
 		{
+			AudioManager.Instance?.PlayExpCollect();
 			ExpManager.Instance.AddExp(_expAmount);
 			Destroy(gameObject);
 			return;

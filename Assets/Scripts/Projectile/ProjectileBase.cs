@@ -54,6 +54,7 @@ public class ProjectileBase : MonoBehaviour
 	// Bounce
 	private Vector3 _velocity;
 	private int _bounceCount;
+	private Vector3 _moveDirection;
 
 	private Coroutine _lifeCoroutine;
 	private bool _defaultBounceEnabled;
@@ -70,6 +71,7 @@ public class ProjectileBase : MonoBehaviour
 	public void Init(float damage)
 	{
 		_damage = damage;
+		_moveDirection = transform.forward;
 		if (_bounceEnabled)
 			_velocity = transform.forward * _speed;
 	}
@@ -87,6 +89,7 @@ public class ProjectileBase : MonoBehaviour
 		_critChance = data.critChance;
 		_critDamageMin = data.critDamageMin;
 		_critDamageMax = data.critDamageMax;
+		_moveDirection = transform.forward;
 		if (data.wallBounce)
 		{
 			_bounceEnabled = true;
@@ -209,7 +212,7 @@ public class ProjectileBase : MonoBehaviour
 		}
 		else
 		{
-			transform.position += transform.forward * _speed * Time.deltaTime;
+			transform.position += _moveDirection * _speed * Time.deltaTime;
 		}
 
 		if (_isPlayerProjectile && _spinSpeed > 0f)
@@ -286,6 +289,7 @@ public class ProjectileBase : MonoBehaviour
 						Vector3 dir = (next.transform.position - transform.position).normalized;
 						dir.y = 0;
 						transform.forward = dir;
+						_moveDirection = dir;
 						if (_bounceEnabled)
 							_velocity = dir * _speed;
 						return;

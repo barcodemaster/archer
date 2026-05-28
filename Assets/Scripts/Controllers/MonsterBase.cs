@@ -72,14 +72,18 @@ public abstract class MonsterBase : MonoBehaviour
 		// 비겹침 몬스터만 물리 콜라이더 + Rigidbody 추가
 		if (!_overlapWithPlayer)
 		{
-			CapsuleCollider physCapsule = gameObject.AddComponent<CapsuleCollider>();
+			CapsuleCollider physCapsule = GetComponent<CapsuleCollider>();
+			if (physCapsule == null || physCapsule.isTrigger)
+				physCapsule = gameObject.AddComponent<CapsuleCollider>();
 			physCapsule.isTrigger = false;
 			physCapsule.radius = _physicsRadius;
 			physCapsule.height = _physicsHeight;
 			physCapsule.center = new Vector3(0, _physicsHeight / 2f, 0);
 			_physicsCollider = physCapsule;
 
-			Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+			Rigidbody rb = GetComponent<Rigidbody>();
+			if (rb == null)
+				rb = gameObject.AddComponent<Rigidbody>();
 			rb.useGravity = false;
 			rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
 			rb.mass = _weight;
@@ -128,6 +132,7 @@ public abstract class MonsterBase : MonoBehaviour
 
 		_currentHp -= damage;
 
+		AudioManager.Instance?.PlayHit();
 		CameraController.Instance?.Shake(0.15f, 0.15f);
 		if (isCritical)
 			DamageTextSpawner.SpawnCritical(transform.position + Vector3.up, damage);
@@ -153,6 +158,7 @@ public abstract class MonsterBase : MonoBehaviour
 
 		_currentHp = 0f;
 
+		AudioManager.Instance?.PlayHit();
 		CameraController.Instance?.Shake(0.15f, 0.15f);
 
 		if (_hpBar != null)
@@ -209,8 +215,11 @@ public abstract class MonsterBase : MonoBehaviour
 		if (_collider != null) _collider.enabled = false;
 		if (_physicsCollider != null) _physicsCollider.enabled = false;
 		if (_rb != null) _rb.isKinematic = true;
+		OnDie();
 		Destroy(gameObject, 1.5f);
 	}
+
+	protected virtual void OnDie() { }
 
 	/// <summary>
 	/// 목표 위치로 이동 가능한지 타일맵 기준으로 판정한다.

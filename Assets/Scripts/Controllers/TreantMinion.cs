@@ -182,6 +182,7 @@ public class TreantMinion : MonsterBase
 	private void FireFourWay()
 	{
 		if (_projectilePrefab == null) return;
+		AudioManager.Instance?.PlayMonsterProjectile();
 		Vector3 spawnPos = new Vector3(transform.position.x, 1f, transform.position.z);
 		foreach (Vector3 dir in CARDINAL_DIRS)
 		{

@@ -3034,7 +3034,7 @@ MonoBehaviour:
   _maxHp: 1000
   _attackAnimSpeed: 2
   _attackFireTime: 0.3
-  _attackDamage: 50
+  _attackDamage: 30
   _projectilePrefab: {fileID: 4973453768417426525, guid: 30460ff290864f740a94ac08b736a3c2, type: 3}
   _weight: 5
 --- !u!114 &-4021597620276024086
@@ -3052,10 +3052,10 @@ MonoBehaviour:
   _attackSpeedLevel: 0
   _frontArrowLevel: 0
   _multiShotLevel: 0
-  _piercingLevel: 1
-  _headshotLevel: 1
-  _wallBounceLevel: 1
-  _ricochetLevel: 1
+  _piercingLevel: 0
+  _headshotLevel: 0
+  _wallBounceLevel: 0
+  _ricochetLevel: 0
   _diagonalArrowLevel: 0
   _sideArrowLevel: 0
   _backArrowLevel: 0

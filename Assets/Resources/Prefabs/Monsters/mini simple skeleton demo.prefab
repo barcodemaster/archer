@@ -518,7 +518,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9151124690889375014}
@@ -565,13 +565,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkeletonMonster
   _maxHp: 100
   _damage: 10
-  _contactDamageCooldown: 1.5
+  _contactDamageCooldown: 2
   _snapToGroundOffset: {x: 0, y: 0.5, z: 0}
+  _triggerColliderCenter: {x: 0, y: 0, z: 0}
   _physicsRadius: 0.5
   _physicsHeight: 1.6
   _weight: 1
   _overlapWithPlayer: 0
   _immovable: 0
+  _isBoss: 0
+  _expReward: 20
   _moveSpeed: 1.8
 --- !u!114 &7251315856607054415
 MonoBehaviour:

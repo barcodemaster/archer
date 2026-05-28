@@ -1,23 +1,23 @@
-type,name,description,icon,maxLevel
-AttackSpeed,공격 속도 부스트,공격 속도가 소폭 상승합니다.,AttackSpeedBoost,10
-FrontArrow,전방 화살 +1,앞으로 발사되는 화살이 추가됩니다.,FrontArrow,3
-MultiShot,멀티 샷,매번 화살 하나를 추가로 발사합니다.,MultiShot,3
-Piercing,관통 샷,화살이 적을 관통합니다.,Piercing,1
-Headshot,헤드 샷,낮은 확률로 적을 즉사시킵니다.,Headshot,1
-DiagonalArrow,사선 화살 +1,대각선 방향으로 화살을 각각 1발 발사합니다.,DiagonalArrow,1
-WallBounce,벽 반사,화살이 벽에 맞으면 튕겨납니다.,WallBounce,1
-SideArrow,측면 화살,화살이 좌우로도 발사됩니다.,SideArrow,1
-Ricochet,반동,명중한 화살이 주변 몬스터로 향합니다.,Recochet,1
-BackArrow,후방 화살 +1,화살이 뒤로도 발사됩니다.,BackArrow,1
-CriticalMaster,크리티컬 마스터,크리티컬 확률 및 데미지가 증가합니다,CriticalMaster,10
-AttackBoost,공격 부스트,공격력이 강해집니다.,AttackBoost,10
-FastGrowth,빠른 성장,"더 빠른 레벨업, 높아진 최고 Lv.",FastGrowth,1
-HpBoost,HP 부스트,최대 HP가 증가합니다.,HpBoost,10
-WallPass,장애물 통과,이제 장애물을 통과할 수 있습니다.,WallPass,1
-WaterWalker,워터 워커,이제 물 위를 걸을 수 있습니다.,WaterWalker,1
-Dwarf,난쟁이,몸집이 작아져 치명타가 증가합니다.,Dwarf ,1
-Giant,거인,몸집이 커져 공격력이 증가합니다.,Giant,1
-Rage,분노,HP가 낮을 때 더 강한 공격을 합니다.,Rage,1
-ExtraLife,Extra Life,추가 생명을 얻습니다.,ExtraLife,1
-SlowProjectile,느린 발사체,적의 발사체가 느려집니다.,SlowProjectile,1
-BloodThirst,피의 갈증,적을 죽이면 HP가 회복됩니다.,BloodThirst,1
+type,name,description,icon,maxLevel,attack,attackPercent,attackSpeed,critRate,critDamage,critDamageBase,critDamageRange,maxHp,healAmount,scale,probability,maxLevelCap,frontArrow,multiShotDelay,ricochetRadius,attackPerHpPercent,enemySlowPercent
+AttackSpeed,공격 속도 부스트,공격 속도가 소폭 상승합니다.,AttackSpeedBoost,10,0,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+FrontArrow,전방 화살 +1,앞으로 발사되는 화살이 추가됩니다.,FrontArrow,3,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0
+MultiShot,멀티 샷,매번 화살 하나를 추가로 발사합니다.,MultiShot,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0.15,0,0,
+Piercing,관통 샷,화살이 적을 관통합니다.,Piercing,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+Headshot,헤드 샷,낮은 확률로 적을 즉사시킵니다.,Headshot,1,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,
+DiagonalArrow,사선 화살 +1,대각선 방향으로 화살을 각각 1발 발사합니다.,DiagonalArrow,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+WallBounce,벽 반사,화살이 벽에 맞으면 튕겨납니다.,WallBounce,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+SideArrow,측면 화살,화살이 좌우로도 발사됩니다.,SideArrow,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Ricochet,반동,명중한 화살이 주변 몬스터로 향합니다.,Recochet,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0
+BackArrow,후방 화살 +1,화살이 뒤로도 발사됩니다.,BackArrow,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+CriticalMaster,크리티컬 마스터,크리티컬 확률 및 데미지가 증가합니다,CriticalMaster,10,0,5,0,10,10,0,0,0,0,0,0,0,0,0,0,,
+AttackBoost,공격 부스트,공격력이 강해집니다.,AttackBoost,10,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+FastGrowth,빠른 성장,"더 빠른 레벨업, 높아진 최고 Lv.",FastGrowth,1,0,0,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0
+HpBoost,HP 부스트,최대 HP가 증가합니다.,HpBoost,10,0,0,0,0,0,0,0,20,20,0,0,0,0,0,0,0,0
+WallPass,장애물 통과,이제 장애물을 통과할 수 있습니다.,WallPass,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+WaterWalker,워터 워커,이제 물 위를 걸을 수 있습니다.,WaterWalker,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Dwarf,난쟁이,몸집이 작아져 치명타가 증가합니다.,Dwarf ,1,0,0,0,10,10,0,0,0,0,0.8,0,0,0,0,0,0,
+Giant,거인,몸집이 커져 공격력이 증가합니다.,Giant,1,0,10,0,0,0,0,0,0,0,1.2,0,0,0,0,0,0,0
+Rage,분노,HP가 낮을 때 더 강한 공격을 합니다.,Rage,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.5,0
+ExtraLife,Extra Life,추가 생명을 얻습니다.,ExtraLife,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+SlowProjectile,느린 발사체,적의 발사체가 느려집니다.,SlowProjectile,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20
+BloodThirst,피의 갈증,적을 죽이면 HP가 회복됩니다.,BloodThirst,1,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0

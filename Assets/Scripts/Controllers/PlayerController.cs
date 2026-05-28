@@ -27,6 +27,9 @@ public class PlayerController : MonoBehaviour
 	private bool _hasFired;
 	private int _lastLoopIndex;
 
+	private float _footstepTimer;
+	private const float FOOTSTEP_INTERVAL = 0.3f;
+
 	private Animator _animator;
 	private CharacterController _controller;
 	private AudioSource _audioSource;
@@ -99,6 +102,13 @@ public class PlayerController : MonoBehaviour
 			transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, Time.deltaTime * _rotateSpeed);
 			_attackTarget = null;
 			State = EState.Move;
+
+			_footstepTimer -= Time.deltaTime;
+			if (_footstepTimer <= 0f)
+			{
+				AudioManager.Instance?.PlayFootstep();
+				_footstepTimer = FOOTSTEP_INTERVAL;
+			}
 		}
 		else
 		{
@@ -190,6 +200,7 @@ public class PlayerController : MonoBehaviour
 		baseDir.y = 0;
 		baseDir.Normalize();
 
+		AudioManager.Instance?.PlayPlayerProjectile();
 		SpawnVolley(baseDir);
 
 		if (_upgrade.MultiShotLevel > 0)
@@ -218,8 +229,8 @@ public class PlayerController : MonoBehaviour
 		baseDamage *= _upgrade.GiantDamageMultiplier;
 		if (_upgrade.HasRage)
 		{
-			float hpRatio = _currentHp / _maxHp;
-			baseDamage *= 1f + (1f - hpRatio) * 0.5f;
+			float missingHpPercent = (1f - _currentHp / _maxHp) * 100f;
+			baseDamage *= 1f + missingHpPercent * _upgrade.RageAttackPerHpPercent / 100f;
 		}
 
 		ProjectileInitData data = new ProjectileInitData
@@ -329,10 +340,11 @@ public class PlayerController : MonoBehaviour
 	/// <summary>
 	/// 최대 HP를 증가시키고 일정량 즉시 회복한다.
 	/// </summary>
-	public void BoostHp(float addMax, float healAmount)
+	public void BoostHp(float maxHpPercent, float healPercent)
 	{
+		float addMax = _maxHp * maxHpPercent;
 		_maxHp += addMax;
-		_currentHp = Mathf.Min(_currentHp + healAmount, _maxHp);
+		_currentHp = Mathf.Min(_currentHp + addMax * healPercent, _maxHp);
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
 	}
@@ -355,16 +367,18 @@ public class PlayerController : MonoBehaviour
 				ApplyWaterWalkCollisions();
 				break;
 			case EUpgradeType.Dwarf:
-				transform.localScale *= 0.9f;
+				var dwarfInfo = UpgradeDatabase.GetInfo(EUpgradeType.Dwarf);
+				transform.localScale *= dwarfInfo?.scale ?? 0.9f;
 				break;
 			case EUpgradeType.Giant:
-				transform.localScale *= 1.1f;
+				var giantInfo = UpgradeDatabase.GetInfo(EUpgradeType.Giant);
+				transform.localScale *= giantInfo?.scale ?? 1.1f;
 				break;
 			case EUpgradeType.HpBoost:
-				BoostHp(200f, 100f);
+				BoostHp(_upgrade.HpBoostPercent, _upgrade.HpBoostHealPercent);
 				break;
 			case EUpgradeType.FastGrowth:
-				ExpManager.Instance.SetMaxLevel(13);
+				ExpManager.Instance.SetMaxLevel(_upgrade.MaxPlayerLevel);
 				break;
 		}
 	}

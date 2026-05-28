@@ -725,7 +725,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BatMonster
   _maxHp: 100
   _damage: 10
-  _contactDamageCooldown: 1.5
+  _contactDamageCooldown: 2
   _snapToGroundOffset: {x: 0, y: 0, z: 0}
   _triggerColliderCenter: {x: 0, y: 1, z: 0}
   _physicsRadius: 0.4
@@ -733,6 +733,8 @@ MonoBehaviour:
   _weight: 1
   _overlapWithPlayer: 1
   _immovable: 0
+  _isBoss: 0
+  _expReward: 20
   _chaseSpeed: 1
   _chargeIntervalMin: 2
   _chargeIntervalMax: 4

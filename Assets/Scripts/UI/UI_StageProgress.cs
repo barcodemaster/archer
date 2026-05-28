@@ -101,6 +101,7 @@ public class UI_StageProgress : MonoBehaviour
     {
         yield return new WaitForSeconds(_panelShowDelay);
 
+        AudioManager.Instance?.PlayStageProgress();
         UIManager.Instance.ShowStageProgress();
 
         // 애니메이션 대상 슬라이더 결정

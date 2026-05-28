@@ -337,6 +337,15 @@ MonoBehaviour:
   - {fileID: 5768183246336328062, guid: 48c064a449cfe3f4e817b5f46a7a6a7f, type: 3}
   - {fileID: 5768183246336328062, guid: ae35804024e2aa243b364b64edbaaf5b, type: 3}
   - {fileID: 5768183246336328062, guid: 65b3a2773790155418e2fa8d27b495df, type: 3}
+  - {fileID: 5768183246336328062, guid: 93a595bb1f2b37241a021c7262016122, type: 3}
+  - {fileID: 5768183246336328062, guid: 9fe929d8e53841445a072d04067f86ab, type: 3}
+  - {fileID: 5768183246336328062, guid: 62481c734be8f344692a6e80ee42c435, type: 3}
+  - {fileID: 5768183246336328062, guid: d486ae46aca265945addc0e3b8eae6c9, type: 3}
+  - {fileID: 5768183246336328062, guid: 24aca024215d6fd459f54912c3f71700, type: 3}
+  - {fileID: 5768183246336328062, guid: 10b062aca44b31440a452f672f771224, type: 3}
+  - {fileID: 5768183246336328062, guid: d5a3ecb4493b4264b909dd780b3441cc, type: 3}
+  - {fileID: 5768183246336328062, guid: f05ea0aef9e00d04e8d97a0f5112facc, type: 3}
+  - {fileID: 5768183246336328062, guid: 622fd6c875d8024459fadf784c22291c, type: 3}
   _playerPrefab: {fileID: 8189980434977739222, guid: 2dfbb63c9cdf7504faf4ff26b0581598, type: 3}
   _expOrbPrefab: {fileID: 3347480546134891962, guid: bf3d04aec73e9f04d911c0fc8827ea3b, type: 3}
   _fadeDuration: 0.7
@@ -516,6 +525,7 @@ Transform:
   - {fileID: 1830613195}
   - {fileID: 177824782}
   - {fileID: 893840507}
+  - {fileID: 623608953}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
@@ -888,6 +898,62 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7332471730788080393, guid: 4b9501670667d974dbaae3c019dc1ad2, type: 3}
   m_PrefabInstance: {fileID: 3169754149547144349}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &623608952
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 623608953}
+  - component: {fileID: 623608954}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &623608953
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623608952}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 235103300}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &623608954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623608952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e56b797fc91b5f042b55aa5588eaeacf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  _footstepClip: {fileID: 8300000, guid: 6d6b6796e9b8ed14c8aa4ebc3d29989e, type: 3}
+  _bgmClip: {fileID: 0}
+  _hitClip: {fileID: 8300000, guid: 80a7fcc69e52afc4e8ff771f58466acd, type: 3}
+  _playerProjectileClip: {fileID: 8300000, guid: 13731acd72e1e094fa7072028281158e, type: 3}
+  _monsterProjectileClip: {fileID: 8300000, guid: ffb159a21c8a04135a5616979c828fab, type: 3}
+  _buttonClickClip: {fileID: 8300000, guid: bf8ab0fadd6aa1742812395809781722, type: 3}
+  _levelUpClip: {fileID: 8300000, guid: 7bd6b897eb5ca4b7d88a205c4a51640c, type: 3}
+  _expCollectClip: {fileID: 8300000, guid: 29bde6326b4c34ad8a12da475f79b50a, type: 3}
+  _upgradeSlotSpinClip: {fileID: 0}
+  _upgradeSlotConfirmClip: {fileID: 8300000, guid: 52320e590bf774734a288886eba557ba, type: 3}
+  _stageProgressClip: {fileID: 0}
+  _upgradePanelOpenClip: {fileID: 0}
 --- !u!1 &633829285 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4253166536016821625, guid: 92705039b31ee994a892ef2983c0ef16, type: 3}

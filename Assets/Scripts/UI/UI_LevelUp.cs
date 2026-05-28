@@ -74,6 +74,7 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 		_isShowing = true;
 		UIManager.Instance.ShowLevelUp();
 		_panel.SetActive(true);
+		AudioManager.Instance?.PlayUpgradePanelOpen();
 		Time.timeScale = 0f;
 		GameManager.Instance.IsPaused = true;
 
@@ -121,9 +122,10 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 		_isAnimating = false;
 		for (int i = 0; i < _slots.Length; i++)
 		{
-			_slots[i].StopSpin();
+			_slots[i].StopSpin(false);
 			_slots[i].SetInteractable(true);
 		}
+		AudioManager.Instance?.PlayUpgradeSlotConfirm();
 	}
 
 	private IEnumerator RouletteStopCoroutine()

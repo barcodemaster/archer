@@ -940,9 +940,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1abc8bbd533fb247919469427d408a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ImpMischief
-  _maxHp: 10000
-  _damage: 10
-  _contactDamageCooldown: 0.5
+  _maxHp: 1000
+  _damage: 60
+  _contactDamageCooldown: 2
   _snapToGroundOffset: {x: 0, y: 0, z: 0}
   _triggerColliderCenter: {x: 0, y: 0.5, z: 0}
   _physicsRadius: 0.5
@@ -955,7 +955,7 @@ MonoBehaviour:
   _chaseSpeed: 2.5
   _chaseDurationMin: 2
   _chaseDurationMax: 4
-  _fireballPrefab: {fileID: 1299517709853501803, guid: 8d933d8dc827afd4d9735e07a5512b04, type: 3}
+  _fireballPrefab: {fileID: 2580380945974098950, guid: f635762555f307047a55c23bfaae3c9f, type: 3}
   _fireballSpreadAngle: 20
   _fireballWindup: 0.5
   _headbuttSpeed: 20
@@ -965,7 +965,7 @@ MonoBehaviour:
   _headbuttReturnSpeed: 15
   _rollSpeed: 15
   _rollMaxDistance: 20
-  _rollDamageMultiplier: 1.5
+  _rollDamageMultiplier: 1.2
   _rollWindup: 0.2
 --- !u!1 &4182563805123768629
 GameObject:

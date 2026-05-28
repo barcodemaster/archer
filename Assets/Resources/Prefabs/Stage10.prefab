@@ -11763,10 +11763,6 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 46b7d7d5beea34e438846476c6b71b6e, type: 2}
   _wallMaterial: {fileID: 0}
   _waterMaterials:
-  - {fileID: 2100000, guid: be6550f5e4538fc47bcef0b05f0f4274, type: 2}
-  - {fileID: 2100000, guid: 71f3ab6919ddc6d46a559f319e3c4043, type: 2}
-  - {fileID: 2100000, guid: b22ed00b50fd7134e9239c8b65b20aac, type: 2}
-  - {fileID: 2100000, guid: 89153570417ed334584de9ac8b9a2048, type: 2}
   - {fileID: 2100000, guid: e4efcf136fa942b408b333ed10e25485, type: 2}
   _blockPrefabs:
   - {fileID: 5074268912860489390, guid: dcfe23f52a11b9b4ab751227cf68b129, type: 3}

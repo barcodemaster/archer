@@ -129,6 +129,7 @@ public class ImpMischief : MonsterBase
 
 		Collider bossCollider = GetComponent<Collider>();
 
+		AudioManager.Instance?.PlayMonsterProjectile();
 		foreach (float angle in angles)
 		{
 			Vector3 dir = Quaternion.Euler(0, angle, 0) * baseDir;

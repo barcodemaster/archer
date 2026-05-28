@@ -246,9 +246,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c2a5161b7267ca45a990f550c54feff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GolemMonster
-  _maxHp: 100
-  _damage: 10
-  _contactDamageCooldown: 1.5
+  _maxHp: 150
+  _damage: 30
+  _contactDamageCooldown: 2
   _snapToGroundOffset: {x: 0, y: 0, z: 0}
   _triggerColliderCenter: {x: 0, y: 0, z: 0}
   _physicsRadius: 1.1

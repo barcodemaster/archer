@@ -148,8 +148,8 @@ public class StageManager : Singleton<StageManager>
 		if (player != null)
 		{
 			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
-			if (upgrade != null && upgrade.BloodThirstHeal > 0f)
-				player.Heal(upgrade.BloodThirstHeal);
+			if (upgrade != null && upgrade.BloodThirstHealPercent > 0f)
+				player.Heal(player.MaxHp * upgrade.BloodThirstHealPercent);
 		}
 
 		// HP하트 드롭
@@ -161,6 +161,15 @@ public class StageManager : Singleton<StageManager>
 			CollectAllHpHearts();
 			OpenExitDoor();
 		}
+	}
+
+	/// <summary>
+	/// 동적 생성된 몬스터를 alive 목록에 등록한다.
+	/// </summary>
+	public void RegisterMonster(MonsterBase monster)
+	{
+		if (!_aliveMonsters.Contains(monster))
+			_aliveMonsters.Add(monster);
 	}
 
 	/// <summary>
