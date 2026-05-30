@@ -46,8 +46,6 @@ public static class UpgradeDatabase
 		if (_all != null) return;
 
 		TextAsset csv = Resources.Load<TextAsset>("Data/UpgradeData");
-		IconAtlas atlas = Resources.Load<IconAtlas>("Data/IconAtlas");
-
 		string[] lines = csv.text.Split('\n');
 		List<UpgradeInfo> list = new();
 
@@ -68,7 +66,7 @@ public static class UpgradeDatabase
 				type = System.Enum.Parse<EUpgradeType>(GetCol(cols, headerMap, "type")),
 				name = GetCol(cols, headerMap, "name"),
 				description = GetCol(cols, headerMap, "description"),
-				icon = atlas != null ? atlas.GetSprite(GetCol(cols, headerMap, "icon")) : null,
+				icon = IconHelper.GetSprite(GetCol(cols, headerMap, "icon")),
 				maxLevel = int.TryParse(GetCol(cols, headerMap, "maxLevel"), out int ml) ? ml : 1,
 
 				attack = GetFloat(cols, headerMap, "attack"),

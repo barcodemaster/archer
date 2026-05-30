@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
   _stageTileMapPrefabs:
-  - {fileID: 7080456982417852651, guid: 79decc141f0637f4b84596c759afc9f0, type: 3}
+  - {fileID: 5768183246336328062, guid: 93a595bb1f2b37241a021c7262016122, type: 3}
   - {fileID: 7080456982417852651, guid: 449ee8d521d576d438bf673f5abfc126, type: 3}
   - {fileID: 7080456982417852651, guid: d8ce256ad029550419483254c50154fc, type: 3}
   - {fileID: 5768183246336328062, guid: 844e1e7004745bb44812c2c2df146339, type: 3}

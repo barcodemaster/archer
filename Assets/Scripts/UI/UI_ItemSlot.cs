@@ -30,8 +30,7 @@ public class UI_ItemSlot : MonoBehaviour
 
 		if (_iconImage != null)
 		{
-			IconAtlas atlas = Resources.Load<IconAtlas>("Data/IconAtlas");
-			Sprite sprite = atlas != null ? atlas.GetSprite(table.icon) : null;
+			Sprite sprite = IconHelper.GetSprite(table.icon);
 			_iconImage.sprite = sprite;
 			_iconImage.enabled = sprite != null;
 		}

@@ -47,7 +47,7 @@ public class UI_PausePanel : MonoBehaviour
 		// 자동으로 SkillIconPool을 찾아 할당 (Inspector에 할당 없을 경우)
 		if (_skillIconPool == null)
 		{
-			_skillIconPool = FindObjectOfType<SkillIconPool>();
+			_skillIconPool = FindAnyObjectByType<SkillIconPool>();
 			if (_skillIconPool == null)
 			{
 				var poolObj = new GameObject("SkillIconPool");
@@ -101,6 +101,13 @@ public class UI_PausePanel : MonoBehaviour
 						img.material = null; // use default UI material for batching
 						img.sprite = info.icon;
 						img.canvasRenderer.SetAlpha(1f);
+
+						Debug.Log(
+	$"obj={img.gameObject.name}, " +
+	$"sprite={img.sprite.name}, " +
+	$"mainTexture={img.mainTexture.name}, " +
+	$"material={(img.material != null ? img.material.name : "null")}"
+);
 					}
 
 					// 초기 스케일 0 로 설정 (애니메이션을 위해)
