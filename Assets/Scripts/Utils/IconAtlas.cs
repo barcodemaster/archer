@@ -1,14 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.U2D;
 
 [CreateAssetMenu(menuName = "Game/IconAtlas")]
 public class IconAtlas : ScriptableObject
 {
-	[SerializeField] private SpriteAtlas _spriteAtlas;
+	[SerializeField] private Sprite[] _sprites;
+	private Dictionary<string, Sprite> _map;
 
 	public Sprite GetSprite(string name)
 	{
-		if (_spriteAtlas == null) return null;
-		return _spriteAtlas.GetSprite(name);
+		if (_map == null)
+		{
+			_map = new Dictionary<string, Sprite>();
+			if (_sprites != null)
+				foreach (var s in _sprites)
+					if (s != null)
+						_map[s.name] = s;
+		}
+		_map.TryGetValue(name, out Sprite sprite);
+		return sprite;
 	}
 }

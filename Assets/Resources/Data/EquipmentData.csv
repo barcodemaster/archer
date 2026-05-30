@@ -1,0 +1,2 @@
+id,name,description,icon,slot,grade,mainStatType,baseMainStat,mainStatPerLevel,baseSubMin,baseSubMax,goldCostBase,goldCostPerLevel,dropWeight,prefab
+1,브론즈 소드,일반 브론즈 소드입니다.,weapon_01,Weapon,Common,10,2,5,3,5,200,400,100,Items/Sword1

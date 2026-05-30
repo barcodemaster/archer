@@ -22,6 +22,14 @@ public class StageManager : Singleton<StageManager>
 	[SerializeField] private GameObject _hpHeartPrefab;
 	[SerializeField] private float _hpHeartDropChance = 0.15f;
 
+	[Header("Gold / Equipment Drop")]
+	[SerializeField] private GameObject _goldOrbPrefab;
+	[SerializeField] private GameObject _equipmentOrbPrefab;
+	[SerializeField] private float _equipmentDropChance = 0.05f;
+	[SerializeField] private int _stageGoldReward = 100;
+	[SerializeField] private int _monsterGoldMin = 5;
+	[SerializeField] private int _monsterGoldMax = 15;
+
 	public int CurrentStageIndex => _currentStageIndex;
 	public int TotalStageCount => _stageTileMapPrefabs?.Count ?? 0;
 	public event Action OnExitDoorOpened;
@@ -31,9 +39,12 @@ public class StageManager : Singleton<StageManager>
 	private List<MonsterBase> _aliveMonsters = new List<MonsterBase>();
 	private List<ExpOrb> _spawnedExpOrbs = new List<ExpOrb>();
 	private List<HPHeart> _spawnedHpHearts = new List<HPHeart>();
+	private List<GoldOrb> _spawnedGoldOrbs = new List<GoldOrb>();
+	private List<EquipmentOrb> _spawnedEquipmentOrbs = new List<EquipmentOrb>();
 
 	private void Start()
 	{
+		SaveManager.Load();
 		SpawnPlayer();
 		if (_stageTileMapPrefabs != null && _stageTileMapPrefabs.Count > 0)
 			StartStage(0);
@@ -79,6 +90,16 @@ public class StageManager : Singleton<StageManager>
 		foreach (var heart in _spawnedHpHearts)
 			if (heart != null) Destroy(heart.gameObject);
 		_spawnedHpHearts.Clear();
+
+		// 남은 GoldOrb 정리
+		foreach (var orb in _spawnedGoldOrbs)
+			if (orb != null) Destroy(orb.gameObject);
+		_spawnedGoldOrbs.Clear();
+
+		// 남은 EquipmentOrb 정리
+		foreach (var orb in _spawnedEquipmentOrbs)
+			if (orb != null) Destroy(orb.gameObject);
+		_spawnedEquipmentOrbs.Clear();
 
 		// 새 TileMap 생성
 		_currentTileMapInstance = Instantiate(_stageTileMapPrefabs[index]);
@@ -155,10 +176,18 @@ public class StageManager : Singleton<StageManager>
 		// HP하트 드롭
 		SpawnHpHeart(monster.transform.position);
 
+		// 골드 드롭
+		SpawnGoldOrb(monster.transform.position);
+
+		// 장비 드롭
+		SpawnEquipmentOrb(monster.transform.position);
+
 		if (_aliveMonsters.Count == 0)
 		{
 			CollectAllExpOrbs();
 			CollectAllHpHearts();
+			CollectAllGoldOrbs();
+			CollectAllEquipmentOrbs();
 			OpenExitDoor();
 		}
 	}
@@ -182,6 +211,9 @@ public class StageManager : Singleton<StageManager>
 
 	private IEnumerator OpenExitDoorSequence()
 	{
+		// 스테이지 클리어 보상 골드
+		GoldManager.Instance.AddGold(_stageGoldReward);
+
 		yield return new WaitForSeconds(1.5f);
 
 		if (_exitDoor == null) yield break;
@@ -265,5 +297,64 @@ public class StageManager : Singleton<StageManager>
 		StartStage(nextIndex);
 
 		yield return UIManager.Instance.FadeIn(_fadeDuration);
+	}
+
+	/// <summary>
+	/// 몬스터 위치에 골드 오브를 생성한다.
+	/// </summary>
+	private void SpawnGoldOrb(Vector3 pos)
+	{
+		if (_goldOrbPrefab == null)
+		{
+			GoldManager.Instance.AddGold(UnityEngine.Random.Range(_monsterGoldMin, _monsterGoldMax + 1));
+			return;
+		}
+
+		int gold = UnityEngine.Random.Range(_monsterGoldMin, _monsterGoldMax + 1);
+		GameObject go = Instantiate(_goldOrbPrefab, pos, Quaternion.identity);
+		GoldOrb orb = go.GetComponent<GoldOrb>();
+		if (orb != null)
+		{
+			orb.Init(gold);
+			_spawnedGoldOrbs.Add(orb);
+		}
+	}
+
+	/// <summary>
+	/// 확률적으로 장비 오브를 드롭한다.
+	/// </summary>
+	private void SpawnEquipmentOrb(Vector3 pos)
+	{
+		if (_equipmentOrbPrefab == null) return;
+		if (UnityEngine.Random.value > _equipmentDropChance) return;
+
+		EquipmentData item = EquipmentManager.Instance.CreateRandomItem();
+		if (item == null) return;
+
+		GameObject go = Instantiate(_equipmentOrbPrefab, pos, Quaternion.identity);
+		EquipmentOrb orb = go.GetComponent<EquipmentOrb>();
+		if (orb != null)
+		{
+			orb.Init(item);
+			_spawnedEquipmentOrbs.Add(orb);
+		}
+	}
+
+	/// <summary>
+	/// 대기 중인 모든 GoldOrb에 수집 시작을 알린다.
+	/// </summary>
+	private void CollectAllGoldOrbs()
+	{
+		foreach (var orb in _spawnedGoldOrbs)
+			if (orb != null) orb.StartCollect();
+	}
+
+	/// <summary>
+	/// 대기 중인 모든 EquipmentOrb에 수집 시작을 알린다.
+	/// </summary>
+	private void CollectAllEquipmentOrbs()
+	{
+		foreach (var orb in _spawnedEquipmentOrbs)
+			if (orb != null) orb.StartCollect();
 	}
 }

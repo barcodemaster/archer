@@ -76,4 +76,25 @@ public class Define
 	public static int SKILL1 = Animator.StringToHash("Skill1");
 	public static int SKILL2 = Animator.StringToHash("Skill2");
 	public static int SKILL3 = Animator.StringToHash("Skill3");
+
+	public enum EEquipSlot { Weapon, Top, Bottom, Bracelet, Ring1, Ring2, Pet1, Pet2 }
+	public enum EEquipGrade { Common, Uncommon, Rare, Epic, Legendary }
+	public enum EMainStatType { Attack, MaxHP }
+	public enum ESubStatType { AttackSpeed, CritChance, CritDamage, DamageResistance }
+
+	/// <summary>
+	/// 등급별 색상을 반환한다.
+	/// </summary>
+	public static Color GetGradeColor(EEquipGrade grade)
+	{
+		switch (grade)
+		{
+			case EEquipGrade.Common:    return Color.white;
+			case EEquipGrade.Uncommon:  return new Color(0.3f, 0.85f, 0.3f);
+			case EEquipGrade.Rare:      return new Color(0.3f, 0.5f, 1f);
+			case EEquipGrade.Epic:      return new Color(0.7f, 0.3f, 0.9f);
+			case EEquipGrade.Legendary: return new Color(1f, 0.8f, 0.2f);
+			default:                    return Color.white;
+		}
+	}
 }

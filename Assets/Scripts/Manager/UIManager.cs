@@ -8,6 +8,7 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject _levelUpLayer;
     [SerializeField] private GameObject _pauseLayer;
     [SerializeField] private GameObject _stageProgressLayer;
+    [SerializeField] private GameObject _equipmentLayer;
 
     private Image _fadeImage;
 
@@ -154,5 +155,43 @@ public class UIManager : Singleton<UIManager>
     public void HideStageProgress()
     {
         if (_stageProgressLayer != null) _stageProgressLayer.SetActive(false);
+    }
+
+    /// <summary>
+    /// 장비창을 표시하고 게임을 일시정지한다.
+    /// </summary>
+    public void ShowEquipment()
+    {
+        if (_joystickLayer != null)
+        {
+            UI_Joystick joystick = _joystickLayer.GetComponentInChildren<UI_Joystick>();
+            if (joystick != null)
+                joystick.ForceReset();
+            _joystickLayer.SetActive(false);
+        }
+        if (_equipmentLayer != null)
+        {
+            _equipmentLayer.SetActive(true);
+            var panel = _equipmentLayer.GetComponent<UI_EquipmentPanel>();
+            if (panel != null) panel.Open();
+        }
+        Time.timeScale = 0f;
+        GameManager.Instance.IsPaused = true;
+    }
+
+    /// <summary>
+    /// 장비창을 숨기고 게임을 재개한다.
+    /// </summary>
+    public void HideEquipment()
+    {
+        if (_equipmentLayer != null)
+        {
+            var panel = _equipmentLayer.GetComponent<UI_EquipmentPanel>();
+            if (panel != null) panel.Close();
+            _equipmentLayer.SetActive(false);
+        }
+        if (_joystickLayer != null) _joystickLayer.SetActive(true);
+        Time.timeScale = 1f;
+        GameManager.Instance.IsPaused = false;
     }
 }

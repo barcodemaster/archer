@@ -67,6 +67,10 @@ public class PlayerController : MonoBehaviour
 		if (_upgrade == null)
 			_upgrade = gameObject.AddComponent<PlayerUpgrade>();
 
+		_hpBar = GetComponentInChildren<PlayerHPBar>(true);
+		if (_hpBar != null)
+			_hpBar.gameObject.SetActive(false);
+
 		Rigidbody rb = GetComponent<Rigidbody>();
 		if (rb != null)
 		{
@@ -77,10 +81,13 @@ public class PlayerController : MonoBehaviour
 
 	private void Start()
 	{
+		_maxHp += EquipmentManager.Instance.GetTotalMaxHpBonus();
 		_currentHp = _maxHp;
-		_hpBar = GetComponentInChildren<PlayerHPBar>();
 		if (_hpBar != null)
+		{
+			_hpBar.gameObject.SetActive(true);
 			_hpBar.SetHP(_currentHp, _maxHp);
+		}
 	}
 
 	private void Update()
@@ -128,7 +135,8 @@ public class PlayerController : MonoBehaviour
 					// 공격 상태 최초 진입: 즉시 애니메이션 시작
 					_hasFired = false;
 					_lastLoopIndex = 0;
-					_animator.speed = _attackAnimSpeed * _upgrade.AttackSpeedMultiplier;
+					float equipAtkSpd = 1f + EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.AttackSpeed) / 100f;
+				_animator.speed = _attackAnimSpeed * _upgrade.AttackSpeedMultiplier * equipAtkSpd;
 					State = EState.Attack;
 				}
 				else
@@ -224,7 +232,7 @@ public class PlayerController : MonoBehaviour
 	{
 		List<Vector3> directions = BuildDirections(baseDir);
 
-		float baseDamage = _attackDamage;
+		float baseDamage = _attackDamage + EquipmentManager.Instance.GetTotalAttackBonus();
 		baseDamage *= _upgrade.AttackBoostMultiplier;
 		baseDamage *= _upgrade.GiantDamageMultiplier;
 		if (_upgrade.HasRage)
@@ -232,6 +240,9 @@ public class PlayerController : MonoBehaviour
 			float missingHpPercent = (1f - _currentHp / _maxHp) * 100f;
 			baseDamage *= 1f + missingHpPercent * _upgrade.RageAttackPerHpPercent / 100f;
 		}
+
+		float equipCritChance = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritChance);
+		float equipCritDamage = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritDamage);
 
 		ProjectileInitData data = new ProjectileInitData
 		{
@@ -241,9 +252,9 @@ public class PlayerController : MonoBehaviour
 			wallBounce = _upgrade.IsWallBounce,
 			ricochetCount = _upgrade.RicochetCount,
 			ricochetRadius = _upgrade.RicochetRadius,
-			critChance = _upgrade.CritChance,
-			critDamageMin = _upgrade.CritDamageMin,
-			critDamageMax = _upgrade.CritDamageMax,
+			critChance = _upgrade.CritChance + equipCritChance,
+			critDamageMin = _upgrade.CritDamageMin + equipCritDamage,
+			critDamageMax = _upgrade.CritDamageMax + equipCritDamage,
 		};
 
 		foreach (Vector3 dir in directions)
@@ -301,6 +312,9 @@ public class PlayerController : MonoBehaviour
 	{
 		if (_state == EState.Die)
 			return;
+
+		float resistance = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.DamageResistance);
+		damage *= (1f - Mathf.Clamp01(resistance / 100f));
 
 		_currentHp -= damage;
 
@@ -441,6 +455,19 @@ public class PlayerController : MonoBehaviour
 		Vector3 pushDir = hit.moveDirection;
 		pushDir.y = 0;
 		rb.AddForce(pushDir.normalized * (_weight - monster.Weight), ForceMode.Impulse);
+	}
+
+	/// <summary>
+	/// 장비 변경 시 최대 HP를 재계산하고 비례 HP를 조정한다.
+	/// </summary>
+	public void RecalculateMaxHp()
+	{
+		float ratio = _maxHp > 0 ? _currentHp / _maxHp : 1f;
+		float baseMax = _maxHp - EquipmentManager.Instance.GetTotalMaxHpBonus();
+		_maxHp = baseMax + EquipmentManager.Instance.GetTotalMaxHpBonus();
+		_currentHp = _maxHp * ratio;
+		if (_hpBar != null)
+			_hpBar.SetHP(_currentHp, _maxHp);
 	}
 
 	private void UpdateAnimation()

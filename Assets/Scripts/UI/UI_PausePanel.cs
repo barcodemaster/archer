@@ -14,6 +14,7 @@ public class UI_PausePanel : MonoBehaviour
 	[SerializeField] private Button _resumeButton;
 	[SerializeField] private Transform _skillIconContainer;
 	[SerializeField] private GameObject _skillIconPrefab;
+	[SerializeField] private SkillIconPool _skillIconPool;
 	[SerializeField] private float _iconAnimInterval = 0.1f;
 	[SerializeField] private float _panelFadeDuration = 0.3f;
 	[SerializeField] private TMP_FontAsset _koreanFont;
@@ -43,6 +44,20 @@ public class UI_PausePanel : MonoBehaviour
 		if (_resumeButton != null)
 			_resumeButton.onClick.AddListener(OnResumeClicked);
 
+		// 자동으로 SkillIconPool을 찾아 할당 (Inspector에 할당 없을 경우)
+		if (_skillIconPool == null)
+		{
+			_skillIconPool = FindObjectOfType<SkillIconPool>();
+			if (_skillIconPool == null)
+			{
+				var poolObj = new GameObject("SkillIconPool");
+				_skillIconPool = poolObj.AddComponent<SkillIconPool>();
+			}
+			// Prefab 초기화
+			if (_skillIconPool != null && _skillIconPrefab != null)
+				_skillIconPool.SetPrefab(_skillIconPrefab);
+		}
+
 		CreateTooltip();
 	}
 
@@ -64,7 +79,10 @@ public class UI_PausePanel : MonoBehaviour
 
 		// 기존 아이콘 제거
 		for (int i = _skillIconContainer.childCount - 1; i >= 0; i--)
-			Destroy(_skillIconContainer.GetChild(i).gameObject);
+		{
+			var child = _skillIconContainer.GetChild(i).gameObject;
+			_skillIconPool.Release(child);
+		}
 
 		// 습득한 스킬 표시
 		PlayerUpgrade playerUpgrade = FindAnyObjectByType<PlayerUpgrade>();
@@ -75,16 +93,25 @@ public class UI_PausePanel : MonoBehaviour
 			{
 				if (playerUpgrade.GetLevel(info.type) > 0)
 				{
-					GameObject iconObj = Instantiate(_skillIconPrefab, _skillIconContainer);
-					Image iconImage = iconObj.GetComponent<Image>();
-					if (iconImage != null && info.icon != null)
-						iconImage.sprite = info.icon;
+					// 풀에서 아이콘 오브젝트 가져오기
+					GameObject iconObj = _skillIconPool.Get(_skillIconContainer);
+					var img = iconObj.GetComponent<Image>();
+					if (img != null && info.icon != null)
+					{
+						img.material = null; // use default UI material for batching
+						img.sprite = info.icon;
+						img.canvasRenderer.SetAlpha(1f);
+					}
+
+					// 초기 스케일 0 로 설정 (애니메이션을 위해)
 					iconObj.transform.localScale = Vector3.zero;
 
+					// 버튼 설정 (프리팹에 이미 있으면 재사용)
 					Button btn = iconObj.GetComponent<Button>();
 					if (btn == null) btn = iconObj.AddComponent<Button>();
 					UpgradeInfo captured = info;
 					RectTransform iconRect = iconObj.GetComponent<RectTransform>();
+					btn.onClick.RemoveAllListeners();
 					btn.onClick.AddListener(() => ShowTooltip(iconRect, captured));
 				}
 			}
