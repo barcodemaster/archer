@@ -67,6 +67,9 @@ public class PlayerController : MonoBehaviour
 		if (_upgrade == null)
 			_upgrade = gameObject.AddComponent<PlayerUpgrade>();
 
+		if (GetComponent<EquipmentVisual>() == null)
+			gameObject.AddComponent<EquipmentVisual>();
+
 		_hpBar = GetComponentInChildren<PlayerHPBar>(true);
 		if (_hpBar != null)
 			_hpBar.gameObject.SetActive(false);
@@ -241,8 +244,8 @@ public class PlayerController : MonoBehaviour
 			baseDamage *= 1f + missingHpPercent * _upgrade.RageAttackPerHpPercent / 100f;
 		}
 
-		float equipCritChance = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritChance);
-		float equipCritDamage = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritDamage);
+		float equipCritChance = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritChance) / 100f;
+		float equipCritDamage = EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.CritDamage) / 100f;
 
 		ProjectileInitData data = new ProjectileInitData
 		{

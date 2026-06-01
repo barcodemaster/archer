@@ -24,7 +24,6 @@ public class SplitterMonster : MonsterBase
 
 		State = EState.Move;
 
-		RefreshPath();
 		Vector3 dir = GetPathDirection();
 
 		if (dir != Vector3.zero)

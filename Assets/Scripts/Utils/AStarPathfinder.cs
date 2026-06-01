@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal.Internal;
 using static Define;
 
 /// <summary>
@@ -26,6 +27,7 @@ public static class AStarPathfinder
 	/// </summary>
 	public static List<Vector2Int> FindPath(TileMap tileMap, Vector2Int from, Vector2Int to, ETilePassFlag passFlags)
 	{
+		// 시작점과 도착점이 같으면 빈 리스트를 반환한다.
 		if (from == to)
 			return new List<Vector2Int>();
 
@@ -35,16 +37,20 @@ public static class AStarPathfinder
 		// 목표가 이동 불가 타일이면 가장 가까운 이동 가능 인접 타일로 대체
 		if (!IsWalkable(tileMap, to, passFlags))
 		{
-			Vector2Int? alt = FindNearestWalkable(tileMap, to, passFlags);
+			Vector2Int? alt = FindNearestWalkable(tileMap, to, passFlags); // 좌표가 있을수도 없을수있다. 좌표가있으면 해당좌표, 없으면 null이다.
 			if (alt == null) return new List<Vector2Int>();
 			to = alt.Value;
 		}
 
+		// 지금까지 발견한 모든 노드 저장. gcost가 더 낮으면 교체한다. allNodes[(3,5)] = Node 정보, 새 gcost가 더 작으면 더 좋은경로이므로 갱신
 		Dictionary<Vector2Int, Node> allNodes = new();
+		// 탐색후보들. fcost, hcost, 좌표순으로 정렬. fcost가 같으면 hcost가 낮은걸 우선한다. fcost와 hcost가 같으면 좌표순으로 꺼낸다.
 		SortedSet<(int fCost, int hCost, int posX, int posY)> openSet = new();
 
-		Node startNode = new Node {
-			pos = from, gCost = 0,
+		Node startNode = new Node
+		{
+			pos = from,
+			gCost = 0,
 			hCost = ManhattanDist(from, to),
 			parent = from
 		};
@@ -78,8 +84,10 @@ public static class AStarPathfinder
 				if (allNodes.ContainsKey(next))
 					openSet.Remove((existing.fCost, existing.hCost, next.x, next.y));
 
-				Node nextNode = new Node {
-					pos = next, gCost = newG,
+				Node nextNode = new Node
+				{
+					pos = next,
+					gCost = newG,
 					hCost = ManhattanDist(next, to),
 					parent = curPos
 				};
@@ -128,3 +136,4 @@ public static class AStarPathfinder
 		return path;
 	}
 }
+

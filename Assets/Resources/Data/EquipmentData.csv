@@ -1,2 +1,37 @@
 id,name,description,icon,slot,grade,mainStatType,baseMainStat,mainStatPerLevel,baseSubMin,baseSubMax,goldCostBase,goldCostPerLevel,dropWeight,prefab
-1,브론즈 소드,일반 브론즈 소드입니다.,weapon_01,Weapon,Common,10,2,5,3,5,200,400,100,Items/Sword1
+1,낡은 청동검,"오래된 전장에서 발견된 기본 검.
+날은 무뎌졌지만 초보 모험가가 다루기에는 충분합니다.",Weapon_01_Bronze,Weapon,Common,0,10,5,3,5,200,400,11,Items/Weapon_01_Bronze
+2,은빛 수련검,"균형이 잘 잡힌 은빛 검. 특별한 힘은 없지만 안정적인
+공격이 가능합니다.",Weapon_02_Silver,Weapon,Common,0,15,5,3,5,200,400,11,Items/Weapon_02_Silver
+3,황금 기사검,"왕국 기사단이 사용하던 검. 단단한 금빛 칼날이 적의
+방어를 가볍게 파고듭니다.",Weapon_03_Gold,Weapon,Common,0,20,5,3,5,200,400,11,items/Weapon_03_Gold
+4,초록 결의검,"숲의 기운이 깃든 검. 휘두를 때마다 잔잔한 생명의
+힘이 칼날을 감쌉니다.",Weapon_04_Green,Weapon,Common,0,25,5,3,5,200,400,11,items/Weapon_04_Green
+5,붉은 전투검,"붉은 손잡이를 가진 전투용 검. 짧은 순간 강한 힘을 실어
+적을 베어냅니다.",Weapon_05_Red,Weapon,Uncommon,0,30,8,3,5,250,450,6,items/Weapon_05_Red
+6,태양빛 장검,"따뜻한 황금빛이 흐르는 장검. 빛을 머금은 칼날이
+어둠 속 적에게 더욱 강하게 반응합니다.",Weapon_06_Yellow,Weapon,Uncommon,0,35,8,3,5,250,450,6,items/Weapon_06_Yellow
+7,푸른 강철검,"차가운 푸른빛을 띠는 강철검. 가볍고 날카로워 빠른
+연속 공격이 가능합니다.",Weapon_07_Blue,Weapon,Uncommon,0,40,8,3,5,250,450,6,items/Weapon_07_Blue
+8,심연의 흑검,"어두운 금속으로 만들어진 검. 칼날에 스며든 불길한
+기운이 적의 생명력을 갉아먹습니다.",Weapon_08_Green,Weapon,Uncommon,0,45,8,3,5,250,450,6,items/Weapon_08_Green
+9,백은의 성검,"순백의 빛을 품은 성스러운 검. 정화의 힘으로 사악한 존
+재에게 큰 피해를 줍니다.",Weapon_09_Red,Weapon,Uncommon,0,50,8,3,5,250,450,6,items/Weapon_09_Red
+10,왕가의 푸른 검,"고대 왕가의 문장이 새겨진 검. 푸른 칼날은 주인의 의지에
+반응해 더욱 날카로워집니다.",Weapon_10_Blue,Weapon,Uncommon,0,55,8,3,5,250,450,6,items/Weapon_10_Blue
+11,비취 사신검,"굽은 비취 칼날을 가진 이형의 검. 베인 적은 독기와 저주
+에 서서히 잠식됩니다.",Weapon_11_Green,Weapon,Rare,0,65,10,3,5,400,600,4,items/Weapon_11_Green
+12,빙결 수정검,"푸른 수정으로 이루어진 마검. 공격 시 차가운 냉기가
+퍼져 적의 움직임을 둔화시킨다.",Weapon_13_Blue,Weapon,Rare,0,70,10,3,5,400,600,4,items/Weapon_13_Blue
+13,핏빛 마검,"붉은 마력이 흐르는 검. 적을 베어낼수록 검의 힘이
+깨어나 더욱 강한 일격을 날립니다.",Weapon_14_Red,Weapon,Rare,0,80,10,3,5,400,600,4,items/Weapon_14_Red
+14,태양의 심판검,"찬란한 빛으로 타오르는 신성한 검. 어둠을 가르는 강력
+한 빛의 참격을 발산한다.",Weapon_15_Yellow,Weapon,Rare,0,90,10,3,5,400,600,4,items/Weapon_15_Yellow
+15,검은 파멸검,"검은 강철과 저주의 룬으로 만들어진 무기. 공격한 적에게
+파멸의 기운을 남깁니다.",Weapon_16_Earth,Weapon,Epic,0,110,15,3,5,600,1000,1,items/Weapon_16_Earth
+16,서리용의 쌍날검,"얼어붙은 용의 뼈와 수정으로 제작된 검. 냉기 폭발로 
+주변 적까지 얼려버립니다.",Weapon_17_Frost,Weapon,Epic,0,120,15,3,5,600,1000,1,items/Weapon_17_Frost
+17,고대 철갑검,"잊힌 제국의 전사들이 사용하던 중검. 묵직한 일격으로 적
+의 방어를 부숴버립니다.",Weapon_18_Iron,Weapon,Epic,0,140,15,3,5,600,1000,1,items/Weapon_18_Iron
+18,화염군주의 마검,"용암과 지옥불로 단련된 최상급 마검. 칼날이 타오를
+때마다 적을 불태우는 화염 참격이 발생합니다.",Weapon_19_Larva,Weapon,Epic,0,160,15,3,5,600,1000,1,items/Weapon_19_Larva

@@ -82,69 +82,46 @@ public class EquipmentSystemSetup : EditorWindow
 
 		GameObject root = CreateUIObject("UI_ItemSlot", tempCanvas.transform);
 		RectTransform rootRt = root.GetComponent<RectTransform>();
-		rootRt.sizeDelta = new Vector2(350, 80);
-		root.AddComponent<Button>();
+		rootRt.sizeDelta = new Vector2(120, 120);
+		Image rootImage = root.AddComponent<Image>();
+		rootImage.color = Color.clear;
+		Button btn = root.AddComponent<Button>();
+		btn.targetGraphic = rootImage;
 		UI_ItemSlot itemSlot = root.AddComponent<UI_ItemSlot>();
 
-		// Background
+		// Background (등급별 배경 이미지)
 		GameObject bg = CreateUIObject("Background", root.transform);
 		Image bgImage = bg.AddComponent<Image>();
-		bgImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+		bgImage.color = new Color(0.5f, 0.5f, 0.5f);
 		StretchFill(bg.GetComponent<RectTransform>());
 
-		// Icon
+		// Icon (중앙 정렬 80x80)
 		GameObject icon = CreateUIObject("Icon", root.transform);
 		Image iconImage = icon.AddComponent<Image>();
 		RectTransform iconRt = icon.GetComponent<RectTransform>();
-		iconRt.anchorMin = new Vector2(0, 0.5f);
-		iconRt.anchorMax = new Vector2(0, 0.5f);
-		iconRt.pivot = new Vector2(0, 0.5f);
-		iconRt.anchoredPosition = new Vector2(8, 0);
-		iconRt.sizeDelta = new Vector2(64, 64);
+		iconRt.anchorMin = new Vector2(0.5f, 0.5f);
+		iconRt.anchorMax = new Vector2(0.5f, 0.5f);
+		iconRt.pivot = new Vector2(0.5f, 0.5f);
+		iconRt.anchoredPosition = Vector2.zero;
+		iconRt.sizeDelta = new Vector2(80, 80);
 
-		// NameText
-		GameObject nameObj = CreateUIObject("NameText", root.transform);
-		TextMeshProUGUI nameText = nameObj.AddComponent<TextMeshProUGUI>();
-		nameText.text = "Item Name";
-		nameText.fontSize = 18;
-		nameText.alignment = TextAlignmentOptions.Left;
-		RectTransform nameRt = nameObj.GetComponent<RectTransform>();
-		nameRt.anchorMin = new Vector2(0, 0.5f);
-		nameRt.anchorMax = new Vector2(1, 1);
-		nameRt.offsetMin = new Vector2(80, 0);
-		nameRt.offsetMax = new Vector2(-10, -5);
-
-		// LevelText
+		// LevelText (하단 작게)
 		GameObject lvObj = CreateUIObject("LevelText", root.transform);
 		TextMeshProUGUI lvText = lvObj.AddComponent<TextMeshProUGUI>();
 		lvText.text = "Lv.1";
-		lvText.fontSize = 14;
-		lvText.alignment = TextAlignmentOptions.Left;
+		lvText.fontSize = 12;
+		lvText.alignment = TextAlignmentOptions.Center;
 		RectTransform lvRt = lvObj.GetComponent<RectTransform>();
 		lvRt.anchorMin = new Vector2(0, 0);
-		lvRt.anchorMax = new Vector2(0.5f, 0.5f);
-		lvRt.offsetMin = new Vector2(80, 5);
-		lvRt.offsetMax = new Vector2(0, 0);
-
-		// StatText
-		GameObject statObj = CreateUIObject("StatText", root.transform);
-		TextMeshProUGUI statText = statObj.AddComponent<TextMeshProUGUI>();
-		statText.text = "ATK +10";
-		statText.fontSize = 14;
-		statText.alignment = TextAlignmentOptions.Right;
-		RectTransform statRt = statObj.GetComponent<RectTransform>();
-		statRt.anchorMin = new Vector2(0.5f, 0);
-		statRt.anchorMax = new Vector2(1, 0.5f);
-		statRt.offsetMin = new Vector2(0, 5);
-		statRt.offsetMax = new Vector2(-10, 0);
+		lvRt.anchorMax = new Vector2(1, 0.22f);
+		lvRt.offsetMin = Vector2.zero;
+		lvRt.offsetMax = Vector2.zero;
 
 		// SerializedField 연결
 		SerializedObject so = new SerializedObject(itemSlot);
-		so.FindProperty("_backgroundImage").objectReferenceValue = bgImage;
+		so.FindProperty("_bgImage").objectReferenceValue = bgImage;
 		so.FindProperty("_iconImage").objectReferenceValue = iconImage;
-		so.FindProperty("_nameText").objectReferenceValue = nameText;
 		so.FindProperty("_levelText").objectReferenceValue = lvText;
-		so.FindProperty("_statText").objectReferenceValue = statText;
 		so.ApplyModifiedPropertiesWithoutUndo();
 
 		// 프리팹 저장
@@ -298,12 +275,12 @@ public class EquipmentSystemSetup : EditorWindow
 		contentRt.offsetMin = new Vector2(0, 0);
 		contentRt.offsetMax = new Vector2(0, 0);
 		GridLayoutGroup grid = content.AddComponent<GridLayoutGroup>();
-		grid.cellSize = new Vector2(350, 80);
+		grid.cellSize = new Vector2(120, 120);
 		grid.spacing = new Vector2(10, 10);
 		grid.startAxis = GridLayoutGroup.Axis.Horizontal;
 		grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-		grid.constraintCount = 1;
-		grid.childAlignment = TextAnchor.UpperCenter;
+		grid.constraintCount = 5;
+		grid.childAlignment = TextAnchor.UpperLeft;
 		ContentSizeFitter csf = content.AddComponent<ContentSizeFitter>();
 		csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -343,8 +320,6 @@ public class EquipmentSystemSetup : EditorWindow
 
 		panelSo.FindProperty("_attackText").objectReferenceValue = atkText;
 		panelSo.FindProperty("_hpText").objectReferenceValue = hpText;
-		panelSo.FindProperty("_goldText").objectReferenceValue = goldText;
-
 		UI_ItemDetailPopup detailComp = detailPopup.GetComponent<UI_ItemDetailPopup>();
 		panelSo.FindProperty("_detailPopup").objectReferenceValue = detailComp;
 		panelSo.FindProperty("_playerModelImage").objectReferenceValue = rawImg;
@@ -381,7 +356,7 @@ public class EquipmentSystemSetup : EditorWindow
 		// GradeBg
 		GameObject gradeBg = CreateUIObject("GradeBg", popup.transform);
 		Image gradeBgImg = gradeBg.AddComponent<Image>();
-		gradeBgImg.color = Color.gray;
+		gradeBgImg.color = Color.white;
 		RectTransform gradeBgRt = gradeBg.GetComponent<RectTransform>();
 		gradeBgRt.anchorMin = new Vector2(0.05f, 0.7f);
 		gradeBgRt.anchorMax = new Vector2(0.35f, 0.95f);
@@ -436,8 +411,8 @@ public class EquipmentSystemSetup : EditorWindow
 		detailSo.FindProperty("_nameText").objectReferenceValue = nameTxt;
 		detailSo.FindProperty("_gradeText").objectReferenceValue = gradeTxt;
 		detailSo.FindProperty("_levelText").objectReferenceValue = lvTxt;
-		detailSo.FindProperty("_mainStatText").objectReferenceValue = mainStatTxt;
-		detailSo.FindProperty("_subStatText").objectReferenceValue = subStatTxt;
+		detailSo.FindProperty("_statsText").objectReferenceValue = mainStatTxt;
+		detailSo.FindProperty("_descriptionText").objectReferenceValue = subStatTxt;
 		detailSo.FindProperty("_costText").objectReferenceValue = costTxt;
 		detailSo.FindProperty("_equipButton").objectReferenceValue = equipBtn.GetComponent<Button>();
 		detailSo.FindProperty("_equipButtonText").objectReferenceValue = equipBtnText;
@@ -724,10 +699,10 @@ public class EquipmentSystemSetup : EditorWindow
 		slotObj.AddComponent<Button>();
 		UI_EquipSlot slot = slotObj.AddComponent<UI_EquipSlot>();
 
-		// Background
+		// Background (등급별 배경 이미지)
 		GameObject bg = CreateUIObject("Background", slotObj.transform);
 		Image bgImg = bg.AddComponent<Image>();
-		bgImg.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+		bgImg.color = new Color(0.5f, 0.5f, 0.5f);
 		StretchFill(bg.GetComponent<RectTransform>());
 
 		// Icon
@@ -763,10 +738,9 @@ public class EquipmentSystemSetup : EditorWindow
 
 		// Wire fields
 		SerializedObject so = new SerializedObject(slot);
-		so.FindProperty("_backgroundImage").objectReferenceValue = bgImg;
+		so.FindProperty("_bgImage").objectReferenceValue = bgImg;
 		so.FindProperty("_iconImage").objectReferenceValue = iconImg;
 		so.FindProperty("_levelText").objectReferenceValue = lvText;
-		so.FindProperty("_emptyPlaceholder").objectReferenceValue = emptyObj;
 		so.FindProperty("_slotType").enumValueIndex = slotTypeEnumValue;
 		so.ApplyModifiedPropertiesWithoutUndo();
 

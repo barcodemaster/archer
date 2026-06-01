@@ -52,9 +52,9 @@ public class EquipmentVisual : MonoBehaviour
 		if (prefab == null) return;
 
 		_weaponInstance = Instantiate(prefab, _weaponBone);
-		_weaponInstance.transform.localPosition = Vector3.zero;
+		_weaponInstance.transform.localPosition = new Vector3(-0.21f, 0.838f, 0.368f);
 		_weaponInstance.transform.localRotation = Quaternion.identity;
-		_weaponInstance.transform.localScale = Vector3.one;
+		_weaponInstance.transform.localScale = new Vector3(0.086f, 1.099f, 0.623f);
 	}
 
 	/// <summary>

@@ -74,6 +74,7 @@ public class UI_EquipmentPanel : MonoBehaviour
 	/// </summary>
 	public void Refresh()
 	{
+		AdjustGridCellSize();
 		RefreshEquipSlots();
 		RefreshInventoryList();
 		RefreshStats();
@@ -369,6 +370,7 @@ public class UI_EquipmentPanel : MonoBehaviour
 		scrollRect.vertical = true;
 		scrollRect.horizontal = false;
 		scrollRect.movementType = ScrollRect.MovementType.Elastic;
+		scrollRect.scrollSensitivity = 30f;
 
 		if (scrollRect.verticalScrollbar != null)
 		{
@@ -378,10 +380,61 @@ public class UI_EquipmentPanel : MonoBehaviour
 
 		scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
-		// 왼쪽 상단부터 정렬
+		// Content RectTransform: top-stretch, pivot 상단
+		RectTransform contentRect = _inventoryContent.GetComponent<RectTransform>();
+		if (contentRect != null)
+		{
+			contentRect.anchorMin = new Vector2(0f, 1f);
+			contentRect.anchorMax = new Vector2(1f, 1f);
+			contentRect.pivot = new Vector2(0.5f, 1f);
+		}
+
+		// GridLayoutGroup 설정 (없으면 추가)
 		GridLayoutGroup grid = _inventoryContent.GetComponent<GridLayoutGroup>();
-		if (grid != null)
-			grid.childAlignment = TextAnchor.UpperLeft;
+		if (grid == null)
+			grid = _inventoryContent.gameObject.AddComponent<GridLayoutGroup>();
+
+		grid.cellSize = new Vector2(120f, 120f);
+		grid.spacing = new Vector2(10f, 10f);
+		grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+		grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+		grid.childAlignment = TextAnchor.UpperLeft;
+		grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+		grid.constraintCount = 5;
+
+		// ContentSizeFitter로 스크롤 가능하게
+		ContentSizeFitter fitter = _inventoryContent.GetComponent<ContentSizeFitter>();
+		if (fitter == null)
+			fitter = _inventoryContent.gameObject.AddComponent<ContentSizeFitter>();
+
+		fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+		fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+		RectTransform viewportRt = scrollRect.viewport;
+		if (viewportRt != null && viewportRt.GetComponent<RectMask2D>() == null)
+			viewportRt.gameObject.AddComponent<RectMask2D>();
+	}
+
+	/// <summary>
+	/// 컨텐츠 너비 기반으로 셀 크기를 계산하여 한 줄에 5개가 들어가도록 조정한다.
+	/// </summary>
+	private void AdjustGridCellSize()
+	{
+		if (_inventoryContent == null) return;
+
+		GridLayoutGroup grid = _inventoryContent.GetComponent<GridLayoutGroup>();
+		if (grid == null) return;
+
+		ScrollRect scrollRect = _inventoryContent.GetComponentInParent<ScrollRect>();
+		if (scrollRect == null || scrollRect.viewport == null) return;
+
+		float width = scrollRect.viewport.rect.width;
+		if (width <= 0) return;
+
+		int columns = 5;
+		float totalSpacing = grid.spacing.x * (columns - 1) + grid.padding.left + grid.padding.right;
+		float cellWidth = (width - totalSpacing) / columns;
+		grid.cellSize = new Vector2(cellWidth, cellWidth);
 	}
 
 	private void OnCloseClicked()

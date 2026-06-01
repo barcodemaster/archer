@@ -10,7 +10,6 @@ public class SkeletonMonster : MonsterBase
 		base.Update();
 		if (State == EState.Die || Target == null) return;
 
-		RefreshPath();
 		Vector3 dir = GetPathDirection();
 		if (dir == Vector3.zero) return;
 

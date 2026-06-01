@@ -8,7 +8,7 @@ using static Define;
 /// </summary>
 public class UI_EquipSlot : MonoBehaviour
 {
-	[SerializeField] private Image _backgroundImage;
+	[SerializeField] private Image _bgImage;
 	[SerializeField] private Image _iconImage;
 	[SerializeField] private TextMeshProUGUI _levelText;
 	[SerializeField] private RawImage _emptyPlaceholderImage;
@@ -23,7 +23,6 @@ public class UI_EquipSlot : MonoBehaviour
 
 	private void Awake()
 	{
-		_panel = GetComponentInParent<UI_EquipmentPanel>();
 		Button btn = GetComponent<Button>();
 		if (btn != null)
 			btn.onClick.AddListener(OnClick);
@@ -36,8 +35,7 @@ public class UI_EquipSlot : MonoBehaviour
 	{
 		_item = item;
 
-		if (_backgroundImage != null)
-			_backgroundImage.color = GetGradeColor(table.grade);
+		ApplyGradeBackground(table.grade);
 
 		if (_iconImage != null)
 		{
@@ -63,8 +61,11 @@ public class UI_EquipSlot : MonoBehaviour
 	{
 		_item = null;
 
-		if (_backgroundImage != null)
-			_backgroundImage.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+		if (_bgImage != null)
+		{
+			_bgImage.sprite = GetGradeSprite(EEquipGrade.Common);
+			_bgImage.color = new Color(0.5f, 0.5f, 0.5f);
+		}
 
 		if (_iconImage != null)
 			_iconImage.enabled = false;
@@ -79,8 +80,23 @@ public class UI_EquipSlot : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// 등급별 배경 이미지를 적용한다.
+	/// </summary>
+	private void ApplyGradeBackground(EEquipGrade grade)
+	{
+		if (_bgImage != null)
+		{
+			_bgImage.sprite = GetGradeSprite(grade);
+			_bgImage.color = Color.white;
+		}
+	}
+
 	private void OnClick()
 	{
+		if (_panel == null)
+			_panel = GetComponentInParent<UI_EquipmentPanel>();
+
 		if (_panel != null)
 			_panel.OnEquipSlotClicked(this);
 	}

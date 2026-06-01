@@ -74,6 +74,24 @@ public class TileMap : MonoBehaviour
 
 	private const string VISUALS_CONTAINER = "_TileVisuals";
 
+	// Dictionary 캐시 (런타임 O(1) 조회용)
+	private Dictionary<Vector2Int, ETileType> _tileCache;
+	private Dictionary<Vector2Int, int> _blockCache;
+
+	/// <summary>
+	/// _tileOverrides/_placedBlocks 리스트를 Dictionary로 변환하여 캐싱한다.
+	/// </summary>
+	private void BuildCache()
+	{
+		_tileCache = new Dictionary<Vector2Int, ETileType>(_tileOverrides.Count);
+		foreach (var e in _tileOverrides)
+			_tileCache[e.pos] = e.type;
+
+		_blockCache = new Dictionary<Vector2Int, int>(_placedBlocks.Count);
+		foreach (var b in _placedBlocks)
+			_blockCache[b.pos] = b.prefabIndex;
+	}
+
 	/// <summary>
 	/// 월드 좌표를 그리드 좌표로 변환한다.
 	/// </summary>
@@ -98,6 +116,16 @@ public class TileMap : MonoBehaviour
 	public ETileType GetTile(int x, int z)
 	{
 		if (x < 0 || x >= _width || z < 0 || z >= _height) return ETileType.Wall;
+
+		// 캐시가 있으면 O(1) 조회
+		if (_tileCache != null)
+		{
+			if (_tileCache.TryGetValue(new Vector2Int(x, z), out ETileType type))
+				return type;
+			return ETileType.Path;
+		}
+
+		// 캐시 없음 — 에디터 호환 fallback
 		foreach (var e in _tileOverrides)
 			if (e.pos.x == x && e.pos.y == z) return e.type;
 		return ETileType.Path;
@@ -105,6 +133,15 @@ public class TileMap : MonoBehaviour
 
 	private int GetBlockIndex(int x, int z)
 	{
+		// 캐시가 있으면 O(1) 조회
+		if (_blockCache != null)
+		{
+			if (_blockCache.TryGetValue(new Vector2Int(x, z), out int idx))
+				return idx;
+			return -1;
+		}
+
+		// 캐시 없음 — 에디터 호환 fallback
 		foreach (var b in _placedBlocks)
 			if (b.pos.x == x && b.pos.y == z) return b.prefabIndex;
 		return -1;
@@ -168,10 +205,14 @@ public class TileMap : MonoBehaviour
 	{
 		ClearVisuals();
 		_spawnedExitDoor = null;
+		BuildCache();
 
 		Transform container = new GameObject(VISUALS_CONTAINER).transform;
 		container.SetParent(transform);
 		container.localPosition = Vector3.zero;
+
+		List<Vector2Int> wallPositions = new List<Vector2Int>();
+		List<Vector2Int> waterPositions = new List<Vector2Int>();
 
 		for (int z = 0; z < _height; z++)
 		{
@@ -180,16 +221,22 @@ public class TileMap : MonoBehaviour
 				ETileType tileType = GetTile(x, z);
 				Vector3 tileCenter = GridToWorld(x, z);
 
-				// Floor cube: top surface at y=0
+				// Floor cube: top surface at y=0, 개별 Collider 제거
 				GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
 				floor.name = $"Floor_{x}_{z}";
 				floor.transform.SetParent(container);
 				floor.transform.position = tileCenter + Vector3.down * (_floorThickness / 2f);
 				floor.transform.localScale = new Vector3(1f, _floorThickness, 1f);
+				floor.isStatic = true;
+
+				// 개별 BoxCollider 제거 (단일 FloorCollider로 대체)
+				Object.DestroyImmediate(floor.GetComponent<BoxCollider>());
 
 				Material mat = GetMaterialForType(tileType, x, z);
 				if (mat != null)
-					floor.GetComponent<Renderer>().material = mat;
+				{
+					floor.GetComponent<Renderer>().sharedMaterial = mat;
+				}
 
 				// Spike 타일에 프리팹 배치
 				if (tileType == ETileType.Spike && _spikePrefab != null)
@@ -201,29 +248,11 @@ public class TileMap : MonoBehaviour
 						spike.AddComponent<SpikeTile>();
 				}
 
-				// Water 타일에 물리 차단용 콜라이더 추가
+				// Wall/Water 위치 수집 (개별 콜라이더 대신 병합)
 				if (tileType == ETileType.Water)
-				{
-					GameObject waterWall = new GameObject("WaterWall");
-					waterWall.transform.SetParent(container);
-					waterWall.transform.position = tileCenter + Vector3.up * 1f;
-					BoxCollider bc = waterWall.AddComponent<BoxCollider>();
-					bc.size = new Vector3(1f, 2f, 1f);
-					bc.isTrigger = false;
-					waterWall.AddComponent<WaterObstacle>();
-				}
-
-				// Wall 타일에 물리 차단용 콜라이더 추가
-				if (tileType == ETileType.Wall)
-				{
-					GameObject wallCollider = new GameObject("WallCollider");
-					wallCollider.transform.SetParent(container);
-					wallCollider.transform.position = tileCenter + Vector3.up * 1f;
-					BoxCollider bc = wallCollider.AddComponent<BoxCollider>();
-					bc.size = new Vector3(1f, 2f, 1f);
-					bc.isTrigger = false;
-					wallCollider.AddComponent<BlockObstacle>();
-				}
+					waterPositions.Add(new Vector2Int(x, z));
+				else if (tileType == ETileType.Wall)
+					wallPositions.Add(new Vector2Int(x, z));
 
 				// Block prefab
 				int blockIdx = GetBlockIndex(x, z);
@@ -236,6 +265,13 @@ public class TileMap : MonoBehaviour
 				}
 			}
 		}
+
+		// 단일 FloorCollider 생성 (맵 전체 커버)
+		CreateFloorCollider(container);
+
+		// Wall/Water Collider 병합
+		CreateMergedColliders<BlockObstacle>(wallPositions, container, "WallCollider");
+		CreateMergedColliders<WaterObstacle>(waterPositions, container, "WaterCollider");
 
 		// ExitDoor 배치
 		if (_exitPoint.x >= 0 && _exitDoorPrefab != null)
@@ -250,6 +286,87 @@ public class TileMap : MonoBehaviour
 
 		AddBoundaryColliders(container);
 		GenerateBackgroundBlocks(container);
+
+		// Static Batching
+		container.gameObject.isStatic = true;
+		StaticBatchingUtility.Combine(container.gameObject);
+	}
+
+	/// <summary>
+	/// 맵 전체를 덮는 단일 바닥 콜라이더를 생성한다.
+	/// </summary>
+	private void CreateFloorCollider(Transform container)
+	{
+		GameObject floorCol = new GameObject("FloorCollider");
+		floorCol.transform.SetParent(container);
+		float cx = _origin.x + _width / 2f - 0.5f;
+		float cz = _origin.z + _height / 2f - 0.5f;
+		floorCol.transform.position = new Vector3(cx, _origin.y - _floorThickness / 2f, cz);
+		BoxCollider bc = floorCol.AddComponent<BoxCollider>();
+		bc.size = new Vector3(_width, _floorThickness, _height);
+	}
+
+	/// <summary>
+	/// Greedy rectangle merge로 인접 타일을 병합하여 최소 수의 BoxCollider를 생성한다.
+	/// </summary>
+	private void CreateMergedColliders<T>(List<Vector2Int> positions, Transform container, string namePrefix) where T : Component
+	{
+		if (positions.Count == 0) return;
+
+		HashSet<Vector2Int> remaining = new HashSet<Vector2Int>(positions);
+
+		while (remaining.Count > 0)
+		{
+			// row-major 순서로 시작점 찾기
+			Vector2Int start = default;
+			int minVal = int.MaxValue;
+			foreach (var p in remaining)
+			{
+				int val = p.y * _width + p.x;
+				if (val < minVal) { minVal = val; start = p; }
+			}
+
+			// 가로(x)로 확장
+			int xEnd = start.x;
+			while (remaining.Contains(new Vector2Int(xEnd + 1, start.y)))
+				xEnd++;
+
+			// 세로(z)로 확장 — strip 전체가 존재해야 함
+			int zEnd = start.y;
+			bool canExpand = true;
+			while (canExpand)
+			{
+				int nextZ = zEnd + 1;
+				for (int xi = start.x; xi <= xEnd; xi++)
+				{
+					if (!remaining.Contains(new Vector2Int(xi, nextZ)))
+					{
+						canExpand = false;
+						break;
+					}
+				}
+				if (canExpand) zEnd = nextZ;
+			}
+
+			// remaining에서 사각형 영역 제거
+			for (int zi = start.y; zi <= zEnd; zi++)
+				for (int xi = start.x; xi <= xEnd; xi++)
+					remaining.Remove(new Vector2Int(xi, zi));
+
+			// 병합된 사각형에 대한 단일 BoxCollider 생성
+			int sizeX = xEnd - start.x + 1;
+			int sizeZ = zEnd - start.y + 1;
+			float centerX = _origin.x + start.x + (sizeX - 1) / 2f;
+			float centerZ = _origin.z + start.y + (sizeZ - 1) / 2f;
+
+			GameObject obj = new GameObject($"{namePrefix}_{start.x}_{start.y}");
+			obj.transform.SetParent(container);
+			obj.transform.position = new Vector3(centerX, _origin.y + 1f, centerZ);
+			BoxCollider bc = obj.AddComponent<BoxCollider>();
+			bc.size = new Vector3(sizeX, 2f, sizeZ);
+			bc.isTrigger = false;
+			obj.AddComponent<T>();
+		}
 	}
 
 	/// <summary>
@@ -277,6 +394,11 @@ public class TileMap : MonoBehaviour
 					if (Application.isPlaying) Destroy(col);
 					else DestroyImmediate(col);
 				}
+
+				// mesh를 Read/Write 가능한 복사본으로 교체하여 Static Batching 허용
+				MeshFilter mf = block.GetComponent<MeshFilter>();
+				if (mf != null && mf.sharedMesh != null)
+					mf.sharedMesh = Instantiate(mf.sharedMesh);
 
 				// Static Batching 활용
 				block.gameObject.isStatic = true;

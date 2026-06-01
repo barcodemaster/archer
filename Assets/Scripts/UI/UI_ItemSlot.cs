@@ -8,7 +8,7 @@ using static Define;
 /// </summary>
 public class UI_ItemSlot : MonoBehaviour
 {
-	[SerializeField] private Image _backgroundImage;
+	[SerializeField] private Image _bgImage;
 	[SerializeField] private Image _iconImage;
 	[SerializeField] private TextMeshProUGUI _levelText;
 
@@ -25,8 +25,7 @@ public class UI_ItemSlot : MonoBehaviour
 		_item = item;
 		_panel = panel;
 
-		if (_backgroundImage != null)
-			_backgroundImage.color = GetGradeColor(table.grade);
+		ApplyGradeBackground(table.grade);
 
 		if (_iconImage != null)
 		{
@@ -43,6 +42,18 @@ public class UI_ItemSlot : MonoBehaviour
 		{
 			btn.onClick.RemoveAllListeners();
 			btn.onClick.AddListener(OnClick);
+		}
+	}
+
+	/// <summary>
+	/// 등급별 배경 이미지를 적용한다.
+	/// </summary>
+	private void ApplyGradeBackground(EEquipGrade grade)
+	{
+		if (_bgImage != null)
+		{
+			_bgImage.sprite = GetGradeSprite(grade);
+			_bgImage.color = Color.white;
 		}
 	}
 

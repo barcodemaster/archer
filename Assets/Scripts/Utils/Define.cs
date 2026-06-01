@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Define
@@ -89,12 +90,39 @@ public class Define
 	{
 		switch (grade)
 		{
-			case EEquipGrade.Common:    return Color.white;
+			case EEquipGrade.Common:    return new Color(0.75f, 0.75f, 0.75f);
 			case EEquipGrade.Uncommon:  return new Color(0.3f, 0.85f, 0.3f);
 			case EEquipGrade.Rare:      return new Color(0.3f, 0.5f, 1f);
 			case EEquipGrade.Epic:      return new Color(0.7f, 0.3f, 0.9f);
 			case EEquipGrade.Legendary: return new Color(1f, 0.8f, 0.2f);
 			default:                    return Color.white;
 		}
+	}
+
+	private static readonly Dictionary<EEquipGrade, Sprite> _gradeSpriteCache = new Dictionary<EEquipGrade, Sprite>();
+
+	/// <summary>
+	/// 등급별 배경 Sprite를 반환한다.
+	/// </summary>
+	public static Sprite GetGradeSprite(EEquipGrade grade)
+	{
+		if (_gradeSpriteCache.TryGetValue(grade, out Sprite cached) && cached != null)
+			return cached;
+
+		string name = grade switch
+		{
+			EEquipGrade.Common    => "GradeBg_Common",
+			EEquipGrade.Uncommon  => "GradeBg_UnCommon",
+			EEquipGrade.Rare      => "GradeBg_Rare",
+			EEquipGrade.Epic      => "GradeBg_Epic",
+			EEquipGrade.Legendary => "GradeBg_Epic",
+			_                     => "GradeBg_Common",
+		};
+
+		Sprite sprite = IconHelper.GetSprite(name);
+		if (sprite != null)
+			_gradeSpriteCache[grade] = sprite;
+
+		return sprite;
 	}
 }

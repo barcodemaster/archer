@@ -948,7 +948,7 @@ MonoBehaviour:
   _triggerColliderCenter: {x: 0, y: 0.4, z: 0}
   _physicsRadius: 0.5
   _physicsHeight: 1.2
-  _weight: 1
+  _weight: 5
   _overlapWithPlayer: 0
   _immovable: 0
   _isBoss: 0

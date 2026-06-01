@@ -162,7 +162,8 @@ public class StageManager : Singleton<StageManager>
 	public void OnMonsterDead(MonsterBase monster)
 	{
 		_aliveMonsters.Remove(monster);
-		SpawnExpOrb(monster.transform.position, monster.ExpReward);
+		Vector3 basePos = monster.transform.position;
+		SpawnExpOrb(basePos + GetRandomDropOffset(), monster.ExpReward);
 
 		// 피의갈증: 처치 시 HP 회복
 		PlayerController player = FindAnyObjectByType<PlayerController>();
@@ -174,13 +175,13 @@ public class StageManager : Singleton<StageManager>
 		}
 
 		// HP하트 드롭
-		SpawnHpHeart(monster.transform.position);
+		SpawnHpHeart(basePos + GetRandomDropOffset());
 
 		// 골드 드롭
-		SpawnGoldOrb(monster.transform.position);
+		SpawnGoldOrb(basePos + GetRandomDropOffset());
 
 		// 장비 드롭
-		SpawnEquipmentOrb(monster.transform.position);
+		SpawnEquipmentOrb(basePos + GetRandomDropOffset());
 
 		if (_aliveMonsters.Count == 0)
 		{
@@ -338,6 +339,15 @@ public class StageManager : Singleton<StageManager>
 			orb.Init(item);
 			_spawnedEquipmentOrbs.Add(orb);
 		}
+	}
+
+	/// <summary>
+	/// 반경 0.5f 내 XZ 랜덤 오프셋을 반환한다.
+	/// </summary>
+	private Vector3 GetRandomDropOffset()
+	{
+		Vector2 offset = UnityEngine.Random.insideUnitCircle * 0.5f;
+		return new Vector3(offset.x, 0f, offset.y);
 	}
 
 	/// <summary>

@@ -23,15 +23,15 @@ public static class EquipmentDatabase
 			return;
 		}
 
-		string[] lines = csv.text.Split('\n');
+		List<string> lines = SplitCsvRows(csv.text);
 		List<EquipmentTable> list = new();
 
-		string[] headers = SplitCsvLine(lines[0].Trim());
+		string[] headers = SplitCsvLine(lines[0]);
 		Dictionary<string, int> headerMap = new();
 		for (int h = 0; h < headers.Length; h++)
 			headerMap[headers[h].Trim()] = h;
 
-		for (int i = 1; i < lines.Length; i++)
+		for (int i = 1; i < lines.Count; i++)
 		{
 			string line = lines[i].Trim();
 			if (string.IsNullOrEmpty(line)) continue;
@@ -122,6 +122,26 @@ public static class EquipmentDatabase
 		return 0;
 	}
 
+	private static List<string> SplitCsvRows(string text)
+	{
+		List<string> rows = new();
+		bool inQuotes = false;
+		int start = 0;
+		for (int i = 0; i < text.Length; i++)
+		{
+			if (text[i] == '"') inQuotes = !inQuotes;
+			else if (!inQuotes && (text[i] == '\n' || text[i] == '\r'))
+			{
+				if (i > start)
+					rows.Add(text.Substring(start, i - start));
+				start = i + 1;
+			}
+		}
+		if (start < text.Length)
+			rows.Add(text.Substring(start));
+		return rows;
+	}
+
 	private static string[] SplitCsvLine(string line)
 	{
 		List<string> cols = new();
@@ -132,11 +152,11 @@ public static class EquipmentDatabase
 			if (line[i] == '"') inQuotes = !inQuotes;
 			else if (line[i] == ',' && !inQuotes)
 			{
-				cols.Add(line.Substring(start, i - start).Trim().Trim('"'));
+				cols.Add(line.Substring(start, i - start).Trim().Trim('"').Replace("\n", " ").Replace("\r", " "));
 				start = i + 1;
 			}
 		}
-		cols.Add(line.Substring(start).Trim().Trim('"'));
+		cols.Add(line.Substring(start).Trim().Trim('"').Replace("\n", " ").Replace("\r", " "));
 		return cols.ToArray();
 	}
 }

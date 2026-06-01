@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections.Generic;
 using UnityEngine;
 using static Define;
@@ -28,11 +29,13 @@ public abstract class MonsterBase : MonoBehaviour
 	private EState _state = EState.Idle;
 	private MonsterHPBar _hpBar;
 	private TilePassability _passability;
+	private Vector2Int _lastTargetGrid = new(int.MinValue, int.MinValue);
 
 	// 경로 추종
 	private List<Vector2Int> _path = new();
 	private int _pathIndex;
 	private float _pathRefreshTimer;
+	private bool _pathDirty;
 	private const float PATH_REFRESH_INTERVAL = 0.5f;
 
 	public EState State
@@ -118,6 +121,22 @@ public abstract class MonsterBase : MonoBehaviour
 				_target = player.transform;
 			else
 				return;
+		}
+
+		// 그리드 변경 감지 → dirty 플래그만 세움
+		if (_lastTargetGrid != GetTargetGrid())
+		{
+			_pathDirty = true;
+			_lastTargetGrid = GetTargetGrid();
+		}
+
+		// 타이머 만료 + dirty일 때만 실제 갱신
+		_pathRefreshTimer -= Time.deltaTime;
+		if (_pathDirty && _pathRefreshTimer <= 0f)
+		{
+			RefreshPath();
+			_pathDirty = false;
+			_pathRefreshTimer = PATH_REFRESH_INTERVAL;
 		}
 
 	}
@@ -248,11 +267,6 @@ public abstract class MonsterBase : MonoBehaviour
 	/// </summary>
 	protected void RefreshPath()
 	{
-		_pathRefreshTimer -= Time.deltaTime;
-		if (_pathRefreshTimer > 0f && _path.Count > 0)
-			return;
-
-		_pathRefreshTimer = PATH_REFRESH_INTERVAL;
 		TileMap tileMap = StageManager.Instance.TileMap;
 		if (tileMap == null || _passability == null || _target == null)
 		{
@@ -300,6 +314,13 @@ public abstract class MonsterBase : MonoBehaviour
 		}
 
 		return toWaypoint.normalized;
+	}
+
+	protected Vector2Int GetTargetGrid()
+	{
+		TileMap tileMap = StageManager.Instance.TileMap;
+		if (tileMap == null) return Vector2Int.zero;
+		return tileMap.WorldToGrid(_target.position);
 	}
 
 	/// <summary>

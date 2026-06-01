@@ -69,7 +69,7 @@ public class BatMonster : MonsterBase
 			// Chase: A* 경로로 플레이어 추적 (Block 우회)
 			State = EState.Move;
 
-			RefreshPath();
+
 			Vector3 dir = GetPathDirection();
 
 			if (dir != Vector3.zero)

@@ -80,7 +80,10 @@ public class UI_ItemDetailPopup : MonoBehaviour
 		if (table == null) return;
 
 		if (_gradeBg != null)
-			_gradeBg.color = GetGradeColor(table.grade);
+		{
+			_gradeBg.sprite = GetGradeSprite(table.grade);
+			_gradeBg.color = Color.white;
+		}
 
 		if (_iconImage != null)
 		{
@@ -99,12 +102,15 @@ public class UI_ItemDetailPopup : MonoBehaviour
 		}
 
 		if (_levelText != null)
-			_levelText.text = $"Lv.{_currentItem.level}";
+			_levelText.text = $"레벨: {_currentItem.level}/50";
 
 		if (_statsText != null)
 		{
 			string mainStatName = table.mainStatType == EMainStatType.Attack ? "ATK" : "Max HP";
-			_statsText.text = $"{mainStatName} +{_currentItem.GetMainStat(table):F0}\n{_currentItem.subStatType} +{_currentItem.subStatValue:F1}%";
+			string mainStatStr = $"{mainStatName} +{_currentItem.GetMainStat(table):F0}";
+			if (_currentItem.level < 50)
+				mainStatStr += $" (<color=#00FF00>+{table.mainStatPerLevel:F0}</color>)";
+			_statsText.text = $"{mainStatStr}\n{_currentItem.subStatType} +{_currentItem.subStatValue:F1}%";
 		}
 
 		if (_descriptionText != null)
@@ -112,7 +118,7 @@ public class UI_ItemDetailPopup : MonoBehaviour
 
 		int cost = _currentItem.GetLevelUpCost(table);
 		if (_costText != null)
-			_costText.text = $"x{cost}";
+			_costText.text = $"레벨업\nx{cost}";
 
 		if (_levelUpButton != null)
 		{
