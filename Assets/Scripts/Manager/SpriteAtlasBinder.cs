@@ -21,6 +21,10 @@ public static class SpriteAtlasBinder
         if (atlas != null)
             callback(atlas);
         else
+        {
+#if UNITY_EDITOR
             Debug.LogWarning($"[SpriteAtlasBinder] SpriteAtlas not found: UI/{tag}");
+#endif
+        }
     }
 }

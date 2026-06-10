@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal.Internal;
 using static Define;
 
 /// <summary>
@@ -42,10 +41,12 @@ public static class AStarPathfinder
 			to = alt.Value;
 		}
 
-		// 지금까지 발견한 모든 노드 저장. gcost가 더 낮으면 교체한다. allNodes[(3,5)] = Node 정보, 새 gcost가 더 작으면 더 좋은경로이므로 갱신
+		// 지금까지 발견한 모든 노드 저장. gcost가 더 낮으면 교체한다.
 		Dictionary<Vector2Int, Node> allNodes = new();
-		// 탐색후보들. fcost, hcost, 좌표순으로 정렬. fcost가 같으면 hcost가 낮은걸 우선한다. fcost와 hcost가 같으면 좌표순으로 꺼낸다.
+		// 탐색후보들. SortedSet으로 fCost, hCost 순 정렬. lazy insertion 방식으로 중복 허용.
 		SortedSet<(int fCost, int hCost, int posX, int posY)> openSet = new();
+		// 이미 처리 완료된 노드. 중복 dequeue 방지.
+		HashSet<Vector2Int> closedSet = new();
 
 		Node startNode = new Node
 		{
@@ -61,7 +62,11 @@ public static class AStarPathfinder
 		{
 			var current = openSet.Min;
 			openSet.Remove(current);
-			Vector2Int curPos = new Vector2Int(current.posX, current.posY);
+			Vector2Int curPos = new(current.posX, current.posY);
+
+			if (closedSet.Contains(curPos))
+				continue;
+			closedSet.Add(curPos);
 
 			if (curPos == to)
 				return ReconstructPath(allNodes, from, to);
@@ -73,6 +78,8 @@ public static class AStarPathfinder
 				Vector2Int next = curPos + dir;
 				if (next.x < 0 || next.x >= w || next.y < 0 || next.y >= h)
 					continue;
+				if (closedSet.Contains(next))
+					continue;
 				if (!IsWalkable(tileMap, next, passFlags))
 					continue;
 
@@ -80,9 +87,6 @@ public static class AStarPathfinder
 
 				if (allNodes.TryGetValue(next, out Node existing) && existing.gCost <= newG)
 					continue;
-
-				if (allNodes.ContainsKey(next))
-					openSet.Remove((existing.fCost, existing.hCost, next.x, next.y));
 
 				Node nextNode = new Node
 				{

@@ -168,6 +168,7 @@ public class GolemMonster : MonsterBase
 		if (baseDir.sqrMagnitude < 0.001f) baseDir = Vector3.forward;
 		else baseDir.Normalize();
 		AudioManager.Instance?.PlayMonsterProjectile();
+		AudioManager.Instance?.PlayMonsterProjectile();
 		foreach (float angle in angles)
 		{
 			Vector3 dir = Quaternion.Euler(0, angle, 0) * baseDir;

@@ -2,57 +2,128 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
+/// <summary>
+/// 스테이지 전환과 초기화만 담당한다.
+/// 보상은 RewardManager, 난이도는 DifficultyManager로 분리(SRP).
+/// </summary>
 public class StageManager : Singleton<StageManager>
 {
-	[SerializeField] private List<GameObject> _stageTileMapPrefabs;
+	[Header("Stage Prefabs")]
+	[SerializeField] private List<GameObject> _normalStages;
+	[SerializeField] private List<GameObject> _bossStagePrefabs;
 	[SerializeField] private GameObject _playerPrefab;
+	[SerializeField] private List<GameObject> _angelRoomPrefabs;
+	[SerializeField] private GameObject _startStagePrefab;
+
+	private List<GameObject> _stagePlayOrder;
+	private HashSet<GameObject> _angelRoomSet;
 
 	private GameObject _currentTileMapInstance;
 	private TileMap _tileMap;
 	public TileMap TileMap => _tileMap;
 
-	[Header("Exp Orb")]
-	[SerializeField] private GameObject _expOrbPrefab;
-
 	[Header("Stage Transition")]
 	[SerializeField] private float _fadeDuration = 0.5f;
 
-	[Header("HP Heart")]
-	[SerializeField] private GameObject _hpHeartPrefab;
-	[SerializeField] private float _hpHeartDropChance = 0.15f;
-
-	[Header("Gold / Equipment Drop")]
-	[SerializeField] private GameObject _goldOrbPrefab;
-	[SerializeField] private GameObject _equipmentOrbPrefab;
-	[SerializeField] private float _equipmentDropChance = 0.05f;
-	[SerializeField] private int _stageGoldReward = 100;
-	[SerializeField] private int _monsterGoldMin = 5;
-	[SerializeField] private int _monsterGoldMax = 15;
+	[Header("Intro Drop")]
+	[SerializeField] private float _introDropHeight = 8f;
+	[SerializeField] private float _introDropDuration = 0.6f;
+	[SerializeField] private float _introRouletteDelay = 1.0f;
 
 	public int CurrentStageIndex => _currentStageIndex;
-	public int TotalStageCount => _stageTileMapPrefabs?.Count ?? 0;
+	public int AliveCost => DifficultyManager.Instance.GetAliveCost(_currentStageIndex);
+	public int TotalStageCount => _stagePlayOrder?.Count ?? 0;
+	public IReadOnlyList<MonsterBase> AliveMonsters => _aliveMonsters;
 	public event Action OnExitDoorOpened;
 
 	private GameObject _exitDoor;
 	private int _currentStageIndex = 0;
 	private List<MonsterBase> _aliveMonsters = new List<MonsterBase>();
-	private List<ExpOrb> _spawnedExpOrbs = new List<ExpOrb>();
-	private List<HPHeart> _spawnedHpHearts = new List<HPHeart>();
-	private List<GoldOrb> _spawnedGoldOrbs = new List<GoldOrb>();
-	private List<EquipmentOrb> _spawnedEquipmentOrbs = new List<EquipmentOrb>();
 
 	private void Start()
 	{
 		SaveManager.Load();
 		SpawnPlayer();
-		if (_stageTileMapPrefabs != null && _stageTileMapPrefabs.Count > 0)
+		BuildStagePlayOrder();
+		if (_stagePlayOrder != null && _stagePlayOrder.Count > 0)
+		{
 			StartStage(0);
+			StartCoroutine(IntroDropSequence());
+		}
 	}
 
 	/// <summary>
-	/// 플레이어를 origin에 임시 스폰한다. StartStage에서 스폰 포인트로 이동된다.
+	/// 스테이지 플레이 순서를 랜덤으로 생성한다.
+	/// 패턴: 시작 + (일반4 + 천사 + 일반4 + 보스) x 보스 수
 	/// </summary>
+	private void BuildStagePlayOrder()
+	{
+		_stagePlayOrder = new List<GameObject>();
+		_angelRoomSet = new HashSet<GameObject>();
+		if (_angelRoomPrefabs != null)
+			foreach (var prefab in _angelRoomPrefabs)
+				if (prefab != null) _angelRoomSet.Add(prefab);
+
+		_stagePlayOrder.Add(_startStagePrefab);
+
+		int bossCount = _bossStagePrefabs != null ? _bossStagePrefabs.Count : 0;
+		int stagesPerZone = 8;
+
+		for (int i = 0; i < bossCount; i++)
+		{
+			List<GameObject> zoneStages = GetZoneStages(i, stagesPerZone);
+			Shuffle(zoneStages);
+
+			for (int j = 0; j < 4 && j < zoneStages.Count; j++)
+				_stagePlayOrder.Add(zoneStages[j]);
+			_stagePlayOrder.Add(PickRandomAngelRoom());
+			for (int j = 4; j < 8 && j < zoneStages.Count; j++)
+				_stagePlayOrder.Add(zoneStages[j]);
+			_stagePlayOrder.Add(_bossStagePrefabs[i]);
+		}
+	}
+
+	private GameObject PickRandomAngelRoom()
+	{
+		if (_angelRoomPrefabs == null || _angelRoomPrefabs.Count == 0) return null;
+		return _angelRoomPrefabs[UnityEngine.Random.Range(0, _angelRoomPrefabs.Count)];
+	}
+
+	public bool IsStartStage(int index)
+	{
+		if (index < 0 || index >= _stagePlayOrder.Count) return false;
+		return _startStagePrefab != null && _stagePlayOrder[index] == _startStagePrefab;
+	}
+
+	public bool IsAngelRoom(int index)
+	{
+		if (_angelRoomSet == null || index < 0 || index >= _stagePlayOrder.Count) return false;
+		return _angelRoomSet.Contains(_stagePlayOrder[index]);
+	}
+
+	public void OnAngelBlessingSelected() => OpenExitDoor();
+	public void OnIntroCompleted() => OpenExitDoor();
+
+	private List<GameObject> GetZoneStages(int zoneIndex, int stagesPerZone)
+	{
+		var result = new List<GameObject>();
+		int start = zoneIndex * stagesPerZone;
+		for (int i = start; i < start + stagesPerZone && i < _normalStages.Count; i++)
+			result.Add(_normalStages[i]);
+		return result;
+	}
+
+	private void Shuffle<T>(List<T> list)
+	{
+		for (int i = list.Count - 1; i > 0; i--)
+		{
+			int j = UnityEngine.Random.Range(0, i + 1);
+			(list[i], list[j]) = (list[j], list[i]);
+		}
+	}
+
 	private void SpawnPlayer()
 	{
 		if (_playerPrefab == null) return;
@@ -66,9 +137,9 @@ public class StageManager : Singleton<StageManager>
 	{
 		_currentStageIndex = index;
 
-		if (index >= _stageTileMapPrefabs.Count)
+		if (index >= _stagePlayOrder.Count)
 		{
-			Debug.Log("All stages cleared!");
+			Logger.Log("StageManager", "All stages cleared!");
 			return;
 		}
 
@@ -81,36 +152,18 @@ public class StageManager : Singleton<StageManager>
 			if (m != null) Destroy(m.gameObject);
 		_aliveMonsters.Clear();
 
-		// 남은 ExpOrb 정리
-		foreach (var orb in _spawnedExpOrbs)
-			if (orb != null) Destroy(orb.gameObject);
-		_spawnedExpOrbs.Clear();
-
-		// 남은 HPHeart 정리
-		foreach (var heart in _spawnedHpHearts)
-			if (heart != null) Destroy(heart.gameObject);
-		_spawnedHpHearts.Clear();
-
-		// 남은 GoldOrb 정리
-		foreach (var orb in _spawnedGoldOrbs)
-			if (orb != null) Destroy(orb.gameObject);
-		_spawnedGoldOrbs.Clear();
-
-		// 남은 EquipmentOrb 정리
-		foreach (var orb in _spawnedEquipmentOrbs)
-			if (orb != null) Destroy(orb.gameObject);
-		_spawnedEquipmentOrbs.Clear();
+		// 남은 보상 정리 (RewardManager에 위임)
+		RewardManager.Instance.CleanupAll();
 
 		// 새 TileMap 생성
-		_currentTileMapInstance = Instantiate(_stageTileMapPrefabs[index]);
+		_currentTileMapInstance = Instantiate(_stagePlayOrder[index]);
 		_tileMap = _currentTileMapInstance.GetComponent<TileMap>();
 		_tileMap.GenerateVisuals();
 		_exitDoor = _tileMap.SpawnedExitDoor;
 
-		// 플레이어 이동
 		TeleportPlayerToSpawn();
 
-		// TileMap 몬스터 스폰
+		// TileMap 몬스터 스폰 (DifficultyManager에 위임)
 		if (_tileMap.MonsterPrefabs != null)
 		{
 			foreach (var entry in _tileMap.PlacedMonsters)
@@ -119,12 +172,16 @@ public class StageManager : Singleton<StageManager>
 				GameObject go = Instantiate(_tileMap.MonsterPrefabs[entry.prefabIndex],
 					_tileMap.GridToWorld(entry.pos.x, entry.pos.y), Quaternion.LookRotation(Vector3.back));
 				MonsterBase mb = go.GetComponent<MonsterBase>();
-				if (mb != null) _aliveMonsters.Add(mb);
+				if (mb != null)
+				{
+					DifficultyManager.Instance.ApplyToMonster(mb, _currentStageIndex);
+					_aliveMonsters.Add(mb);
+				}
 			}
 		}
 
-		// 플레이어가 WallPass/WaterWalker를 보유하면 새 타일에도 적용
-		PlayerController player = FindAnyObjectByType<PlayerController>();
+		// 플레이어 타일 패스 적용 (캐싱된 인스턴스 사용)
+		PlayerController player = PlayerController.Instance;
 		if (player != null)
 		{
 			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
@@ -137,17 +194,22 @@ public class StageManager : Singleton<StageManager>
 			}
 		}
 
-		if (_aliveMonsters.Count == 0)
+		// 천사방이면 AngelNPC 드롭 연출
+		if (IsAngelRoom(index))
+		{
+			AngelNPC angel = FindAnyObjectByType<AngelNPC>();
+			if (angel != null)
+				angel.PlayDropAnimation();
+		}
+
+		if (_aliveMonsters.Count == 0 && !IsAngelRoom(index) && !IsStartStage(index))
 			OpenExitDoor();
 	}
 
-	/// <summary>
-	/// 플레이어를 현재 TileMap의 스폰 포인트로 순간이동한다.
-	/// </summary>
 	private void TeleportPlayerToSpawn()
 	{
 		if (_tileMap == null) return;
-		PlayerController player = FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player == null) return;
 		Vector3 spawnPos = _tileMap.GetSpawnWorldPosition();
 		CharacterController cc = player.GetComponent<CharacterController>();
@@ -156,55 +218,75 @@ public class StageManager : Singleton<StageManager>
 		if (cc != null) cc.enabled = true;
 	}
 
+	private IEnumerator IntroDropSequence()
+	{
+		PlayerController player = PlayerController.Instance;
+		if (player == null) yield break;
+
+		CharacterController cc = player.GetComponent<CharacterController>();
+		player.IsIntroDrop = true;
+
+		Vector3 spawnPos = player.transform.position;
+		Vector3 startPos = spawnPos + Vector3.up * _introDropHeight;
+
+		if (cc != null) cc.enabled = false;
+		player.transform.position = startPos;
+		if (cc != null) cc.enabled = true;
+
+		float elapsed = 0f;
+		while (elapsed < _introDropDuration)
+		{
+			elapsed += Time.deltaTime;
+			float t = Mathf.Clamp01(elapsed / _introDropDuration);
+			float eased = t * t;
+			Vector3 pos = Vector3.Lerp(startPos, spawnPos, eased);
+
+			if (cc != null) cc.enabled = false;
+			player.transform.position = pos;
+			if (cc != null) cc.enabled = true;
+
+			yield return null;
+		}
+
+		if (cc != null) cc.enabled = false;
+		player.transform.position = spawnPos;
+		if (cc != null) cc.enabled = true;
+
+		AudioManager.Instance?.PlayLanding();
+		player.IsIntroDrop = false;
+
+		yield return new WaitForSeconds(_introRouletteDelay);
+
+		UI_LevelUp levelUp = FindAnyObjectByType<UI_LevelUp>(FindObjectsInactive.Include);
+		if (levelUp != null)
+			levelUp.ShowIntro();
+	}
+
 	/// <summary>
-	/// 몬스터 사망 시 호출. 피의갈증 회복, HP하트 드롭, ExpOrb 스폰.
+	/// 몬스터 사망 시 호출. RewardManager에 보상 처리를 위임한다.
 	/// </summary>
 	public void OnMonsterDead(MonsterBase monster)
 	{
 		_aliveMonsters.Remove(monster);
-		Vector3 basePos = monster.transform.position;
-		SpawnExpOrb(basePos + GetRandomDropOffset(), monster.ExpReward);
 
-		// 피의갈증: 처치 시 HP 회복
-		PlayerController player = FindAnyObjectByType<PlayerController>();
-		if (player != null)
-		{
-			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
-			if (upgrade != null && upgrade.BloodThirstHealPercent > 0f)
-				player.Heal(player.MaxHp * upgrade.BloodThirstHealPercent);
-		}
-
-		// HP하트 드롭
-		SpawnHpHeart(basePos + GetRandomDropOffset());
-
-		// 골드 드롭
-		SpawnGoldOrb(basePos + GetRandomDropOffset());
-
-		// 장비 드롭
-		SpawnEquipmentOrb(basePos + GetRandomDropOffset());
+		RewardManager.Instance.DropMonsterRewards(monster, PlayerController.Instance);
 
 		if (_aliveMonsters.Count == 0)
 		{
-			CollectAllExpOrbs();
-			CollectAllHpHearts();
-			CollectAllGoldOrbs();
-			CollectAllEquipmentOrbs();
+			RewardManager.Instance.CollectAll();
 			OpenExitDoor();
 		}
 	}
 
-	/// <summary>
-	/// 동적 생성된 몬스터를 alive 목록에 등록한다.
-	/// </summary>
 	public void RegisterMonster(MonsterBase monster)
 	{
 		if (!_aliveMonsters.Contains(monster))
 			_aliveMonsters.Add(monster);
 	}
 
-	/// <summary>
-	/// 출구 문을 활성화한다.
-	/// </summary>
+	public List<EquipmentData> GetCollectedEquipments() => RewardManager.Instance.CollectedEquipments;
+	public int GetTotalGoldCollected() => RewardManager.Instance.TotalGoldCollected;
+
 	private void OpenExitDoor()
 	{
 		StartCoroutine(OpenExitDoorSequence());
@@ -212,10 +294,8 @@ public class StageManager : Singleton<StageManager>
 
 	private IEnumerator OpenExitDoorSequence()
 	{
-		// 스테이지 클리어 보상 골드
-		GoldManager.Instance.AddGold(_stageGoldReward);
-
-		yield return new WaitForSeconds(1.5f);
+		RewardManager.Instance.GrantStageGold();
+		SaveManager.UpdateBestStage(_currentStageIndex);
 
 		if (_exitDoor == null) yield break;
 		ExitDoor door = _exitDoor.GetComponent<ExitDoor>();
@@ -225,65 +305,6 @@ public class StageManager : Singleton<StageManager>
 		OnExitDoorOpened?.Invoke();
 	}
 
-	/// <summary>
-	/// 대기 중인 모든 ExpOrb에 수집 시작을 알린다.
-	/// </summary>
-	private void CollectAllExpOrbs()
-	{
-		foreach (var orb in _spawnedExpOrbs)
-			if (orb != null) orb.StartCollect();
-	}
-
-	/// <summary>
-	/// 대기 중인 모든 HPHeart에 수집 시작을 알린다.
-	/// </summary>
-	private void CollectAllHpHearts()
-	{
-		foreach (var heart in _spawnedHpHearts)
-			if (heart != null) heart.StartCollect();
-	}
-
-	/// <summary>
-	/// 지정 위치에 경험치 오브를 하나 생성한다.
-	/// </summary>
-	private void SpawnExpOrb(Vector3 pos, int exp)
-	{
-		if (_expOrbPrefab != null)
-		{
-			GameObject orb = Instantiate(_expOrbPrefab, pos, Quaternion.identity);
-			ExpOrb expOrb = orb.GetComponent<ExpOrb>();
-			if (expOrb != null)
-			{
-				expOrb.Init(exp);
-				_spawnedExpOrbs.Add(expOrb);
-			}
-		}
-		else
-		{
-			ExpManager.Instance.AddExp(exp);
-		}
-	}
-
-	/// <summary>
-	/// 확률적으로 HP하트를 드롭한다.
-	/// </summary>
-	private void SpawnHpHeart(Vector3 pos)
-	{
-		if (_hpHeartPrefab == null) return;
-		if (UnityEngine.Random.value > _hpHeartDropChance) return;
-
-		GameObject go = Instantiate(_hpHeartPrefab, pos, Quaternion.identity);
-		HPHeart heart = go.GetComponent<HPHeart>();
-		if (heart != null)
-		{
-			heart.Init();
-			_spawnedHpHearts.Add(heart);
-		}
-	}
-
-	/// <summary>
-	/// 다음 스테이지로 진행한다. 페이드 전환 효과를 적용한다.
-	/// </summary>
 	public void GoToNextStage()
 	{
 		StartCoroutine(StageTransitionSequence(_currentStageIndex + 1));
@@ -292,79 +313,35 @@ public class StageManager : Singleton<StageManager>
 	private IEnumerator StageTransitionSequence(int nextIndex)
 	{
 		yield return UIManager.Instance.FadeOut(_fadeDuration);
-
 		UIManager.Instance.HideStageProgress();
-
 		StartStage(nextIndex);
-
 		yield return UIManager.Instance.FadeIn(_fadeDuration);
 	}
 
-	/// <summary>
-	/// 몬스터 위치에 골드 오브를 생성한다.
-	/// </summary>
-	private void SpawnGoldOrb(Vector3 pos)
+#if UNITY_EDITOR
+	[Header("Cheat (Editor Only)")]
+	[SerializeField] private bool _useCheat = false;
+	[SerializeField] private int _cheatStageIndex = 0;
+
+	private void Update()
 	{
-		if (_goldOrbPrefab == null)
+		if (_useCheat && Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame)
 		{
-			GoldManager.Instance.AddGold(UnityEngine.Random.Range(_monsterGoldMin, _monsterGoldMax + 1));
+			CheatGoToStage(_cheatStageIndex);
+		}
+	}
+
+	/// <summary>
+	/// 지정한 스테이지 인덱스로 즉시 이동한다 (에디터 전용 치트).
+	/// </summary>
+	private void CheatGoToStage(int index)
+	{
+		if (_stagePlayOrder == null || index < 0 || index >= _stagePlayOrder.Count)
+		{
+			Logger.LogWarning("StageManager", $"Cheat: Invalid stage index {index} (total: {TotalStageCount})");
 			return;
 		}
-
-		int gold = UnityEngine.Random.Range(_monsterGoldMin, _monsterGoldMax + 1);
-		GameObject go = Instantiate(_goldOrbPrefab, pos, Quaternion.identity);
-		GoldOrb orb = go.GetComponent<GoldOrb>();
-		if (orb != null)
-		{
-			orb.Init(gold);
-			_spawnedGoldOrbs.Add(orb);
-		}
+		StartCoroutine(StageTransitionSequence(index));
 	}
-
-	/// <summary>
-	/// 확률적으로 장비 오브를 드롭한다.
-	/// </summary>
-	private void SpawnEquipmentOrb(Vector3 pos)
-	{
-		if (_equipmentOrbPrefab == null) return;
-		if (UnityEngine.Random.value > _equipmentDropChance) return;
-
-		EquipmentData item = EquipmentManager.Instance.CreateRandomItem();
-		if (item == null) return;
-
-		GameObject go = Instantiate(_equipmentOrbPrefab, pos, Quaternion.identity);
-		EquipmentOrb orb = go.GetComponent<EquipmentOrb>();
-		if (orb != null)
-		{
-			orb.Init(item);
-			_spawnedEquipmentOrbs.Add(orb);
-		}
-	}
-
-	/// <summary>
-	/// 반경 0.5f 내 XZ 랜덤 오프셋을 반환한다.
-	/// </summary>
-	private Vector3 GetRandomDropOffset()
-	{
-		Vector2 offset = UnityEngine.Random.insideUnitCircle * 0.5f;
-		return new Vector3(offset.x, 0f, offset.y);
-	}
-
-	/// <summary>
-	/// 대기 중인 모든 GoldOrb에 수집 시작을 알린다.
-	/// </summary>
-	private void CollectAllGoldOrbs()
-	{
-		foreach (var orb in _spawnedGoldOrbs)
-			if (orb != null) orb.StartCollect();
-	}
-
-	/// <summary>
-	/// 대기 중인 모든 EquipmentOrb에 수집 시작을 알린다.
-	/// </summary>
-	private void CollectAllEquipmentOrbs()
-	{
-		foreach (var orb in _spawnedEquipmentOrbs)
-			if (orb != null) orb.StartCollect();
-	}
+#endif
 }

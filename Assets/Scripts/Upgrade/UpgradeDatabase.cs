@@ -46,7 +46,15 @@ public static class UpgradeDatabase
 		if (_all != null) return;
 
 		TextAsset csv = Resources.Load<TextAsset>("Data/UpgradeData");
-		string[] lines = csv.text.Split('\n');
+		if (csv == null)
+		{
+#if UNITY_EDITOR
+			Debug.LogError("[UpgradeDatabase] Data/UpgradeData CSV not found!");
+#endif
+			_all = new UpgradeInfo[0];
+			return;
+		}
+		string[] lines = csv.text.Replace("\r", "").Split('\n');
 		List<UpgradeInfo> list = new();
 
 		// 헤더 기반 파싱
@@ -61,33 +69,41 @@ public static class UpgradeDatabase
 			if (string.IsNullOrEmpty(line)) continue;
 			string[] cols = SplitCsvLine(line);
 
-			var info = new UpgradeInfo
+			try
 			{
-				type = System.Enum.Parse<EUpgradeType>(GetCol(cols, headerMap, "type")),
-				name = GetCol(cols, headerMap, "name"),
-				description = GetCol(cols, headerMap, "description"),
-				icon = IconHelper.GetSprite(GetCol(cols, headerMap, "icon")),
-				maxLevel = int.TryParse(GetCol(cols, headerMap, "maxLevel"), out int ml) ? ml : 1,
+				var info = new UpgradeInfo
+				{
+					type = System.Enum.Parse<EUpgradeType>(GetCol(cols, headerMap, "type")),
+					name = GetCol(cols, headerMap, "name"),
+					description = GetCol(cols, headerMap, "description"),
+					icon = IconHelper.GetSprite(GetCol(cols, headerMap, "icon")),
+					maxLevel = int.TryParse(GetCol(cols, headerMap, "maxLevel"), out int ml) ? ml : 1,
 
-				attack = GetFloat(cols, headerMap, "attack"),
-				attackPercent = GetFloat(cols, headerMap, "attackPercent"),
-				attackSpeed = GetFloat(cols, headerMap, "attackSpeed"),
-				critRate = GetFloat(cols, headerMap, "critRate"),
-				critDamage = GetFloat(cols, headerMap, "critDamage"),
-				critDamageBase = GetFloat(cols, headerMap, "critDamageBase"),
-				critDamageRange = GetFloat(cols, headerMap, "critDamageRange"),
-				maxHp = GetFloat(cols, headerMap, "maxHp"),
-				healAmount = GetFloat(cols, headerMap, "healAmount"),
-				scale = GetFloat(cols, headerMap, "scale"),
-				probability = GetFloat(cols, headerMap, "probability"),
-				maxLevelCap = GetFloat(cols, headerMap, "maxLevelCap"),
-				frontArrow = GetFloat(cols, headerMap, "frontArrow"),
-				multiShotDelay = GetFloat(cols, headerMap, "multiShotDelay"),
-				ricochetRadius = GetFloat(cols, headerMap, "ricochetRadius"),
-				attackPerHpPercent = GetFloat(cols, headerMap, "attackPerHpPercent"),
-				enemySlowPercent = GetFloat(cols, headerMap, "enemySlowPercent"),
-			};
-			list.Add(info);
+					attack = GetFloat(cols, headerMap, "attack"),
+					attackPercent = GetFloat(cols, headerMap, "attackPercent"),
+					attackSpeed = GetFloat(cols, headerMap, "attackSpeed"),
+					critRate = GetFloat(cols, headerMap, "critRate"),
+					critDamage = GetFloat(cols, headerMap, "critDamage"),
+					critDamageBase = GetFloat(cols, headerMap, "critDamageBase"),
+					critDamageRange = GetFloat(cols, headerMap, "critDamageRange"),
+					maxHp = GetFloat(cols, headerMap, "maxHp"),
+					healAmount = GetFloat(cols, headerMap, "healAmount"),
+					scale = GetFloat(cols, headerMap, "scale"),
+					probability = GetFloat(cols, headerMap, "probability"),
+					maxLevelCap = GetFloat(cols, headerMap, "maxLevelCap"),
+					frontArrow = GetFloat(cols, headerMap, "frontArrow"),
+					multiShotDelay = GetFloat(cols, headerMap, "multiShotDelay"),
+					ricochetRadius = GetFloat(cols, headerMap, "ricochetRadius"),
+					attackPerHpPercent = GetFloat(cols, headerMap, "attackPerHpPercent"),
+					enemySlowPercent = GetFloat(cols, headerMap, "enemySlowPercent"),
+				};
+				list.Add(info);
+			}
+			catch (System.Exception e)
+			{
+				Debug.LogWarning($"[UpgradeDatabase] Failed to parse row {i}: {e.Message}");
+				continue;
+			}
 		}
 
 		_all = list.ToArray();
@@ -146,7 +162,7 @@ public static class UpgradeDatabase
 		Init();
 		List<UpgradeInfo> pool = new List<UpgradeInfo>();
 
-		PlayerUpgrade playerUpgrade = Object.FindAnyObjectByType<PlayerUpgrade>();
+		PlayerUpgrade playerUpgrade = PlayerController.Instance?.GetComponent<PlayerUpgrade>();
 		foreach (var info in _all)
 		{
 			if (playerUpgrade != null && playerUpgrade.GetLevel(info.type) >= info.maxLevel)

@@ -217,7 +217,7 @@ public class EquipmentSystemSetup : EditorWindow
 		rightRt.offsetMin = new Vector2(0, 0);
 		rightRt.offsetMax = new Vector2(-10, 0);
 
-		string[] rightSlotNames = { "Ring1", "Ring2", "Pet1", "Pet2" };
+		string[] rightSlotNames = { "Ring", "Ring", "Pet", "Pet" };
 		int[] rightSlotEnumValues = { 4, 5, 6, 7 };
 
 		for (int i = 0; i < rightSlotNames.Length; i++)

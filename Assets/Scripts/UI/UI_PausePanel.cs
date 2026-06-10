@@ -47,7 +47,7 @@ public class UI_PausePanel : MonoBehaviour
 		// 자동으로 SkillIconPool을 찾아 할당 (Inspector에 할당 없을 경우)
 		if (_skillIconPool == null)
 		{
-			_skillIconPool = FindAnyObjectByType<SkillIconPool>();
+			_skillIconPool = Object.FindAnyObjectByType<SkillIconPool>();
 			if (_skillIconPool == null)
 			{
 				var poolObj = new GameObject("SkillIconPool");
@@ -85,7 +85,7 @@ public class UI_PausePanel : MonoBehaviour
 		}
 
 		// 습득한 스킬 표시
-		PlayerUpgrade playerUpgrade = FindAnyObjectByType<PlayerUpgrade>();
+		PlayerUpgrade playerUpgrade = PlayerController.Instance?.GetComponent<PlayerUpgrade>();
 		if (playerUpgrade != null)
 		{
 			UpgradeInfo[] allUpgrades = UpgradeDatabase.GetAll();
@@ -98,16 +98,10 @@ public class UI_PausePanel : MonoBehaviour
 					var img = iconObj.GetComponent<Image>();
 					if (img != null && info.icon != null)
 					{
-						img.material = null; // use default UI material for batching
+						img.material = null;
 						img.sprite = info.icon;
 						img.canvasRenderer.SetAlpha(1f);
 
-						Debug.Log(
-	$"obj={img.gameObject.name}, " +
-	$"sprite={img.sprite.name}, " +
-	$"mainTexture={img.mainTexture.name}, " +
-	$"material={(img.material != null ? img.material.name : "null")}"
-);
 					}
 
 					// 초기 스케일 0 로 설정 (애니메이션을 위해)
@@ -116,10 +110,9 @@ public class UI_PausePanel : MonoBehaviour
 					// 버튼 설정 (프리팹에 이미 있으면 재사용)
 					Button btn = iconObj.GetComponent<Button>();
 					if (btn == null) btn = iconObj.AddComponent<Button>();
-					UpgradeInfo captured = info;
 					RectTransform iconRect = iconObj.GetComponent<RectTransform>();
 					btn.onClick.RemoveAllListeners();
-					btn.onClick.AddListener(() => ShowTooltip(iconRect, captured));
+					btn.onClick.AddListener(() => ShowTooltip(iconRect, info));
 				}
 			}
 		}

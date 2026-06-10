@@ -9817,6 +9817,7 @@ MonoBehaviour:
   _arcDuration: 0.8
   _spinSpeed: 720
   _explosionPrefab: {fileID: 6839958377064539316, guid: 75168bc031a8d1a438ddd3bcf9e8853a, type: 3}
+  _hitEffectPrefab: {fileID: 255548979746159036, guid: 5c02747361d15324285e11ee3da0156f, type: 3}
 --- !u!136 &8605042338417124201
 CapsuleCollider:
   m_ObjectHideFlags: 0

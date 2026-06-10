@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static Define;
 
-public abstract class MonsterBase : MonoBehaviour
+public abstract class MonsterBase : MonoBehaviour, IDamageable
 {
 	[SerializeField] private float _maxHp = 100f;
 	[SerializeField] private float _damage = 10f;
@@ -11,7 +11,7 @@ public abstract class MonsterBase : MonoBehaviour
 	[SerializeField] private Vector3 _snapToGroundOffset;
 	[SerializeField] private Vector3 _triggerColliderCenter;
 
-	[SerializeField] private float _physicsRadius = 0.35f;
+	[SerializeField] private float _physicsRadius = 0.4f;
 	[SerializeField] private float _physicsHeight = 1.6f;
 	[SerializeField] private float _weight = 1f;
 	[SerializeField] protected bool _overlapWithPlayer = false;
@@ -27,21 +27,25 @@ public abstract class MonsterBase : MonoBehaviour
 	private Collider _physicsCollider;
 	private Rigidbody _rb;
 	private EState _state = EState.Idle;
+	private Vector3 _lastValidPosition;
 	private MonsterHPBar _hpBar;
 	private TilePassability _passability;
-	private Vector2Int _lastTargetGrid = new(int.MinValue, int.MinValue);
+	private PlayerController _playerController;
 
 	// 경로 추종
 	private List<Vector2Int> _path = new();
 	private int _pathIndex;
 	private float _pathRefreshTimer;
-	private bool _pathDirty;
-	private const float PATH_REFRESH_INTERVAL = 0.5f;
+
+	private float _knockbackTimer;
+
+	// State Pattern
+	private IMonsterState _currentState;
 
 	public EState State
 	{
 		get => _state;
-		protected set
+		set
 		{
 			if (_state == value)
 				return;
@@ -50,17 +54,37 @@ public abstract class MonsterBase : MonoBehaviour
 		}
 	}
 
+	// IDamageable
 	public float MaxHp => _maxHp;
 	public float CurrentHp => _currentHp;
+	public bool IsDead => _state == EState.Die;
+
 	public float Damage => _damage;
 	public float Weight => _weight;
 	public bool IsBoss => _isBoss;
+	public bool IsImmovable => _immovable;
 	public int ExpReward => _expReward;
 	public bool OverlapWithPlayer => _overlapWithPlayer;
+	public bool HasTarget => _target != null;
 	protected Transform Target => _target;
 	protected Animator Anim => _animator;
 	protected TilePassability Passability => _passability;
 	protected Rigidbody Rb => _rb;
+
+	/// <summary>
+	/// State Pattern: 현재 상태를 전환한다.
+	/// </summary>
+	public void TransitionTo(IMonsterState newState)
+	{
+		_currentState?.Exit(this);
+		_currentState = newState;
+		_currentState?.Enter(this);
+	}
+
+	/// <summary>
+	/// 외부에서 이동 중단을 호출할 수 있도록 public으로 노출한다.
+	/// </summary>
+	public void StopMovementPublic() => StopMovement();
 
 	protected virtual void Start()
 	{
@@ -72,7 +96,7 @@ public abstract class MonsterBase : MonoBehaviour
 		_hpBar = GetComponentInChildren<MonsterHPBar>();
 		_passability = GetComponent<TilePassability>();
 
-		// 비겹침 몬스터만 물리 콜라이더 + Rigidbody 추가
+		// 비겹침 몬스터: 물리 콜라이더 + dynamic Rigidbody
 		if (!_overlapWithPlayer)
 		{
 			CapsuleCollider physCapsule = GetComponent<CapsuleCollider>();
@@ -95,6 +119,15 @@ public abstract class MonsterBase : MonoBehaviour
 			if (_immovable)
 				_rb.constraints = RigidbodyConstraints.FreezeAll;
 		}
+		else
+		{
+			Rigidbody rb = GetComponent<Rigidbody>();
+			if (rb == null)
+				rb = gameObject.AddComponent<Rigidbody>();
+			rb.useGravity = false;
+			rb.isKinematic = true;
+			_rb = rb;
+		}
 
 		if (_animator != null)
 			_animator.applyRootMotion = false;
@@ -104,9 +137,12 @@ public abstract class MonsterBase : MonoBehaviour
 
 		transform.position = new Vector3(transform.position.x, _snapToGroundOffset.y, transform.position.z);
 
-		PlayerController player = FindAnyObjectByType<PlayerController>();
-		if (player != null)
-			_target = player.transform;
+		// PlayerController 캐싱 (FindAnyObjectByType 제거)
+		_playerController = PlayerController.Instance;
+		if (_playerController != null)
+			_target = _playerController.transform;
+
+		_lastValidPosition = transform.position;
 	}
 
 	protected virtual void Update()
@@ -114,37 +150,60 @@ public abstract class MonsterBase : MonoBehaviour
 		if (_state == EState.Die)
 			return;
 
+		if (_knockbackTimer > 0f)
+			_knockbackTimer -= Time.deltaTime;
+
+		// 벽 안에 들어갔으면 마지막 유효 위치로 복원
+		if (!CanMoveTo(transform.position))
+		{
+			transform.position = _lastValidPosition;
+			if (_rb != null)
+				_rb.linearVelocity = Vector3.zero;
+		}
+		else
+		{
+			_lastValidPosition = transform.position;
+		}
+
 		if (_target == null)
 		{
-			PlayerController player = FindAnyObjectByType<PlayerController>();
-			if (player != null)
-				_target = player.transform;
+			_playerController = PlayerController.Instance;
+			if (_playerController != null)
+				_target = _playerController.transform;
 			else
 				return;
 		}
 
-		// 그리드 변경 감지 → dirty 플래그만 세움
-		if (_lastTargetGrid != GetTargetGrid())
-		{
-			_pathDirty = true;
-			_lastTargetGrid = GetTargetGrid();
-		}
-
-		// 타이머 만료 + dirty일 때만 실제 갱신
+		// 경로 갱신
 		_pathRefreshTimer -= Time.deltaTime;
-		if (_pathDirty && _pathRefreshTimer <= 0f)
+		if (_pathRefreshTimer <= 0f)
 		{
 			RefreshPath();
-			_pathDirty = false;
-			_pathRefreshTimer = PATH_REFRESH_INTERVAL;
+			_pathRefreshTimer = GameConfig.Instance.pathRefreshInterval;
 		}
 
+		// 비겹침 몬스터: 정지한 플레이어에게 접근 시 거리 기반 접촉 데미지
+		if (!_overlapWithPlayer && _playerController != null)
+		{
+			Vector3 diff = transform.position - _target.position;
+			diff.y = 0;
+			if (diff.magnitude <= _physicsRadius + 0.5f)
+				TryContactDamage(_playerController);
+		}
+
+		// State Pattern Update
+		_currentState?.Update(this);
 	}
 
 	/// <summary>
 	/// 데미지를 받고 HP가 0 이하이면 사망 처리한다.
 	/// </summary>
-	public void TakeDamage(float damage, bool isCritical = false)
+	public void TakeDamage(float damage)
+	{
+		TakeDamage(damage, false);
+	}
+
+	public void TakeDamage(float damage, bool isCritical)
 	{
 		if (_state == EState.Die)
 			return;
@@ -154,9 +213,9 @@ public abstract class MonsterBase : MonoBehaviour
 		AudioManager.Instance?.PlayHit();
 		CameraController.Instance?.Shake(0.15f, 0.15f);
 		if (isCritical)
-			DamageTextSpawner.SpawnCritical(transform.position + Vector3.up, damage);
+			DamageTextSpawner.SpawnCritical(transform.position + Vector3.up, -damage);
 		else
-			DamageTextSpawner.Spawn(transform.position + Vector3.up, damage, false);
+			DamageTextSpawner.Spawn(transform.position + Vector3.up, -damage, false);
 
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
@@ -166,6 +225,17 @@ public abstract class MonsterBase : MonoBehaviour
 			_currentHp = 0f;
 			Die();
 		}
+	}
+
+	/// <summary>
+	/// HP를 회복한다. 최대 HP를 넘기지 않는다.
+	/// </summary>
+	public void Heal(float amount)
+	{
+		if (_state == EState.Die) return;
+		_currentHp = Mathf.Min(_currentHp + amount, _maxHp);
+		if (_hpBar != null)
+			_hpBar.SetHP(_currentHp, _maxHp);
 	}
 
 	/// <summary>
@@ -229,12 +299,14 @@ public abstract class MonsterBase : MonoBehaviour
 	private void Die()
 	{
 		State = EState.Die;
+		if (_hpBar != null)
+			_hpBar.gameObject.SetActive(false);
 		StopMovement();
+		OnDie();
 		StageManager.Instance.OnMonsterDead(this);
 		if (_collider != null) _collider.enabled = false;
 		if (_physicsCollider != null) _physicsCollider.enabled = false;
 		if (_rb != null) _rb.isKinematic = true;
-		OnDie();
 		Destroy(gameObject, 1.5f);
 	}
 
@@ -256,7 +328,8 @@ public abstract class MonsterBase : MonoBehaviour
 	/// </summary>
 	protected void MoveToward(Vector3 direction, float speed)
 	{
-		if (_rb != null)
+		if (_knockbackTimer > 0f) return;
+		if (_rb != null && !_rb.isKinematic)
 			_rb.linearVelocity = new Vector3(direction.x * speed, 0, direction.z * speed);
 		else
 			transform.position += direction * speed * Time.deltaTime;
@@ -330,7 +403,34 @@ public abstract class MonsterBase : MonoBehaviour
 	{
 		if (_rb == null) return;
 		direction.y = 0;
-		_rb.AddForce(direction.normalized * force, ForceMode.Impulse);
+		_rb.linearVelocity = direction.normalized * force;
+		_knockbackTimer = GameConfig.Instance.knockbackDuration;
+	}
+
+	/// <summary>
+	/// 플레이어 충돌로 밀어낼 때 호출. 벽 체크 + 떨림 방지를 포함한다.
+	/// </summary>
+	public void PushAway(Vector3 direction, float force)
+	{
+		if (_rb == null || _immovable) return;
+		direction.y = 0;
+		Vector3 displacement = direction.normalized * force * Time.deltaTime;
+		Vector3 nextPos = transform.position + displacement;
+		if (!CanMoveTo(nextPos))
+			return;
+		transform.position = nextPos;
+	}
+
+	/// <summary>
+	/// 스폰 직후 호출하여 난이도 배율을 적용한다.
+	/// </summary>
+	public void ApplyDifficultyScale(float hpMult, float dmgMult)
+	{
+		_maxHp *= hpMult;
+		_currentHp = _maxHp;
+		_damage *= dmgMult;
+		if (_hpBar != null)
+			_hpBar.SetHP(_currentHp, _maxHp);
 	}
 
 	protected void StopMovement()
@@ -339,25 +439,40 @@ public abstract class MonsterBase : MonoBehaviour
 			_rb.linearVelocity = Vector3.zero;
 	}
 
+	/// <summary>
+	/// 접촉 데미지를 쿨다운 기반으로 적용한다.
+	/// </summary>
+	public void TryContactDamage(PlayerController player)
+	{
+		if (_state == EState.Die || player == null) return;
+
+		_contactDamageTimer -= Time.deltaTime;
+		if (_contactDamageTimer <= 0f)
+		{
+			player.TakeDamage(_damage);
+			_contactDamageTimer = _contactDamageCooldown;
+		}
+	}
+
 	private void OnCollisionStay(Collision collision)
 	{
-		if (_state == EState.Die) return;
 		PlayerController player = collision.gameObject.GetComponent<PlayerController>();
 		if (player == null) return;
-		if (_weight <= player.Weight) return;
-		Vector3 pushDir = (player.transform.position - transform.position).normalized;
-		pushDir.y = 0;
-		player.Push(pushDir * (_weight - player.Weight) * 0.5f * Time.deltaTime);
+
+		TryContactDamage(player);
+
+		if (_weight > player.Weight)
+		{
+			Vector3 pushDir = (player.transform.position - transform.position).normalized;
+			pushDir.y = 0;
+			player.Push(pushDir * (_weight - player.Weight) * 0.5f * Time.deltaTime);
+		}
 	}
 
 	private void OnTriggerStay(Collider other)
 	{
-		if (_state == EState.Die) return;
 		PlayerController player = other.GetComponent<PlayerController>();
 		if (player == null) return;
-		_contactDamageTimer -= Time.deltaTime;
-		if (_contactDamageTimer > 0f) return;
-		player.TakeDamage(_damage);
-		_contactDamageTimer = _contactDamageCooldown;
+		TryContactDamage(player);
 	}
 }

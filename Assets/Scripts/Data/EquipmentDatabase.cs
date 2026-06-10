@@ -9,7 +9,18 @@ using static Define;
 public static class EquipmentDatabase
 {
 	private static EquipmentTable[] _all;
-	private static int _totalWeight;
+
+	/// <summary>등급별 드롭 확률 (합계 1.0)</summary>
+	private static readonly Dictionary<EEquipGrade, float> _gradeProbability = new()
+	{
+		{ EEquipGrade.Common,   0.60f },
+		{ EEquipGrade.Uncommon, 0.25f },
+		{ EEquipGrade.Rare,     0.12f },
+		{ EEquipGrade.Epic,     0.03f },
+	};
+
+	/// <summary>등급별 아이템 캐시</summary>
+	private static Dictionary<EEquipGrade, List<EquipmentTable>> _byGrade;
 
 	private static void Init()
 	{
@@ -18,7 +29,9 @@ public static class EquipmentDatabase
 		TextAsset csv = Resources.Load<TextAsset>("Data/EquipmentData");
 		if (csv == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogError("EquipmentData.csv not found in Resources/Data/");
+#endif
 			_all = new EquipmentTable[0];
 			return;
 		}
@@ -37,32 +50,45 @@ public static class EquipmentDatabase
 			if (string.IsNullOrEmpty(line)) continue;
 			string[] cols = SplitCsvLine(line);
 
-			var table = new EquipmentTable
+			try
 			{
-				id = GetInt(cols, headerMap, "id"),
-				name = GetCol(cols, headerMap, "name"),
-				description = GetCol(cols, headerMap, "description"),
-				icon = GetCol(cols, headerMap, "icon"),
-				slot = System.Enum.Parse<EEquipSlot>(GetCol(cols, headerMap, "slot")),
-				grade = System.Enum.Parse<EEquipGrade>(GetCol(cols, headerMap, "grade")),
-				mainStatType = System.Enum.Parse<EMainStatType>(GetCol(cols, headerMap, "mainStatType")),
-				baseMainStat = GetFloat(cols, headerMap, "baseMainStat"),
-				mainStatPerLevel = GetFloat(cols, headerMap, "mainStatPerLevel"),
-				baseSubMin = GetFloat(cols, headerMap, "baseSubMin"),
-				baseSubMax = GetFloat(cols, headerMap, "baseSubMax"),
-				goldCostBase = GetInt(cols, headerMap, "goldCostBase"),
-				goldCostPerLevel = GetInt(cols, headerMap, "goldCostPerLevel"),
-				dropWeight = GetInt(cols, headerMap, "dropWeight"),
-				prefab = GetCol(cols, headerMap, "prefab"),
-			};
-			list.Add(table);
+				var table = new EquipmentTable
+				{
+					id = GetInt(cols, headerMap, "id"),
+					name = GetCol(cols, headerMap, "name"),
+					description = GetCol(cols, headerMap, "description"),
+					icon = GetCol(cols, headerMap, "icon"),
+					slot = ParseEquipSlot(GetCol(cols, headerMap, "slot")),
+					grade = System.Enum.Parse<EEquipGrade>(GetCol(cols, headerMap, "grade")),
+					mainStatType = System.Enum.Parse<EMainStatType>(GetCol(cols, headerMap, "mainStatType")),
+					baseMainStat = GetFloat(cols, headerMap, "baseMainStat"),
+					mainStatPerLevel = GetFloat(cols, headerMap, "mainStatPerLevel"),
+					baseSubMin = GetFloat(cols, headerMap, "baseSubMin"),
+					baseSubMax = GetFloat(cols, headerMap, "baseSubMax"),
+					goldCostBase = GetInt(cols, headerMap, "goldCostBase"),
+					goldCostPerLevel = GetInt(cols, headerMap, "goldCostPerLevel"),
+					dropWeight = GetInt(cols, headerMap, "dropWeight"),
+					prefab = GetCol(cols, headerMap, "prefab"),
+				};
+				list.Add(table);
+			}
+			catch (System.Exception e)
+			{
+				Debug.LogWarning($"[EquipmentDatabase] Failed to parse row {i}: {e.Message}");
+				continue;
+			}
 		}
 
 		_all = list.ToArray();
 
-		_totalWeight = 0;
+		// 등급별 아이템 캐시 구축
+		_byGrade = new Dictionary<EEquipGrade, List<EquipmentTable>>();
 		foreach (var t in _all)
-			_totalWeight += t.dropWeight;
+		{
+			if (!_byGrade.ContainsKey(t.grade))
+				_byGrade[t.grade] = new List<EquipmentTable>();
+			_byGrade[t.grade].Add(t);
+		}
 	}
 
 	public static EquipmentTable[] GetAll()
@@ -81,22 +107,35 @@ public static class EquipmentDatabase
 	}
 
 	/// <summary>
-	/// 가중치 기반 랜덤으로 장비 테이블 하나를 선택한다.
+	/// 등급별 확률로 드롭 아이템을 선택한다.
+	/// 1단계: 등급 결정 (Common 60%, Uncommon 25%, Rare 12%, Epic 3%)
+	/// 2단계: 해당 등급 내 균등 랜덤
 	/// </summary>
 	public static EquipmentTable PickRandomDrop()
 	{
 		Init();
 		if (_all.Length == 0) return null;
 
-		int roll = Random.Range(0, _totalWeight);
-		int cumulative = 0;
-		foreach (var t in _all)
+		// 1단계: 등급 결정
+		float roll = Random.value;
+		float cumulative = 0f;
+		EEquipGrade selectedGrade = EEquipGrade.Common;
+		foreach (var kv in _gradeProbability)
 		{
-			cumulative += t.dropWeight;
+			cumulative += kv.Value;
 			if (roll < cumulative)
-				return t;
+			{
+				selectedGrade = kv.Key;
+				break;
+			}
 		}
-		return _all[_all.Length - 1];
+
+		// 2단계: 해당 등급 내 균등 랜덤
+		if (_byGrade.TryGetValue(selectedGrade, out var list) && list.Count > 0)
+			return list[Random.Range(0, list.Count)];
+
+		// 해당 등급에 아이템이 없으면 전체에서 랜덤
+		return _all[Random.Range(0, _all.Length)];
 	}
 
 	private static string GetCol(string[] cols, Dictionary<string, int> headerMap, string key)
@@ -120,6 +159,13 @@ public static class EquipmentDatabase
 		if (int.TryParse(val, out int v))
 			return v;
 		return 0;
+	}
+
+	private static EEquipSlot ParseEquipSlot(string value)
+	{
+		if (value == "Ring") return EEquipSlot.Ring1;
+		if (value == "Pet") return EEquipSlot.Pet1;
+		return System.Enum.Parse<EEquipSlot>(value);
 	}
 
 	private static List<string> SplitCsvRows(string text)

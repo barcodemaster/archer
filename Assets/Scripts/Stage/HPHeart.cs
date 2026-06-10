@@ -34,7 +34,7 @@ public class HPHeart : MonoBehaviour
 	{
 		_waiting = false;
 		_collecting = true;
-		PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player != null)
 			_target = player.transform;
 		_elapsed = 0f;
@@ -73,7 +73,7 @@ public class HPHeart : MonoBehaviour
 
 	private void HealPlayer()
 	{
-		PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player != null)
 			player.Heal(_healAmount);
 	}

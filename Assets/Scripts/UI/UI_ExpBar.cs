@@ -7,20 +7,23 @@ public class UI_ExpBar : MonoBehaviour
 	[SerializeField] private Slider _slider;
 	[SerializeField] private TextMeshProUGUI _levelText;
 
+	private ExpManager _expManager;
+
 	private void Start()
 	{
-		ExpManager.Instance.OnExpChanged += UpdateBar;
-		UpdateBar(0, ExpManager.Instance.ExpToNextLevel);
+		_expManager = ExpManager.Instance;
+		_expManager.OnExpChanged += UpdateBar;
+		UpdateBar(0, _expManager.ExpToNextLevel);
 		UpdateLevelText();
-		ExpManager.Instance.OnLevelUp += OnLevelUp;
+		_expManager.OnLevelUp += OnLevelUp;
 	}
 
 	private void OnDestroy()
 	{
-		if (ExpManager.Instance != null)
+		if (_expManager != null)
 		{
-			ExpManager.Instance.OnExpChanged -= UpdateBar;
-			ExpManager.Instance.OnLevelUp -= OnLevelUp;
+			_expManager.OnExpChanged -= UpdateBar;
+			_expManager.OnLevelUp -= OnLevelUp;
 		}
 	}
 

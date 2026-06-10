@@ -24,24 +24,28 @@ public class UI_StageProgress : MonoBehaviour
     [SerializeField] private float _panelShowDelay = 1.0f;
 
     private bool _isNearEnd;
+    private StageManager _stageManager;
 
     private void Start()
     {
-        StageManager.Instance.OnExitDoorOpened += OnExitDoorOpened;
+        _stageManager = StageManager.Instance;
+        _stageManager.OnExitDoorOpened += OnExitDoorOpened;
         gameObject.SetActive(false);
     }
 
     private void OnDestroy()
     {
-        if (StageManager.Instance != null)
-            StageManager.Instance.OnExitDoorOpened -= OnExitDoorOpened;
+        if (_stageManager != null)
+            _stageManager.OnExitDoorOpened -= OnExitDoorOpened;
     }
 
     private void OnExitDoorOpened()
     {
+        if (StageManager.Instance.CurrentStageIndex == 0) return;
+
         gameObject.SetActive(true);
-        int current = StageManager.Instance.CurrentStageIndex + 1;
-        int total = StageManager.Instance.TotalStageCount;
+        int current = StageManager.Instance.CurrentStageIndex;
+        int total = StageManager.Instance.TotalStageCount - 1;
 
         if (current >= total) return;
 
@@ -99,6 +103,9 @@ public class UI_StageProgress : MonoBehaviour
     /// </summary>
     private IEnumerator StageProgressSequence()
     {
+        // 시작 시 모든 텍스트 스케일 초기화
+        ResetTextScales();
+
         yield return new WaitForSeconds(_panelShowDelay);
 
         AudioManager.Instance?.PlayStageProgress();
@@ -150,5 +157,15 @@ public class UI_StageProgress : MonoBehaviour
         yield return new WaitForSeconds(_autoCloseDelay);
 
         UIManager.Instance.HideStageProgress();
+    }
+
+    /// <summary>
+    /// 모든 스테이지 텍스트의 스케일을 1로 초기화한다.
+    /// </summary>
+    private void ResetTextScales()
+    {
+        if (_currentStageText != null) _currentStageText.transform.localScale = Vector3.one;
+        if (_nextStageText != null) _nextStageText.transform.localScale = Vector3.one;
+        if (_nextNextStageText != null) _nextNextStageText.transform.localScale = Vector3.one;
     }
 }

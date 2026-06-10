@@ -143,7 +143,7 @@ public class UI_ItemDetailPopup : MonoBehaviour
 		}
 
 		// 플레이어 HP 재계산
-		PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player != null) player.RecalculateMaxHp();
 
 		gameObject.SetActive(false);
@@ -159,7 +159,7 @@ public class UI_ItemDetailPopup : MonoBehaviour
 			// 장착 중이면 HP 재계산
 			if (_currentItem.isEquipped)
 			{
-				PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+				PlayerController player = PlayerController.Instance;
 				if (player != null) player.RecalculateMaxHp();
 			}
 

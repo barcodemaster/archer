@@ -6,8 +6,10 @@ using static Define;
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(AudioSource))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IDamageable
 {
+	public static PlayerController Instance { get; private set; }
+
 	[SerializeField, Range(1, 5)]
 	private float _moveSpeed = 3;
 
@@ -16,6 +18,7 @@ public class PlayerController : MonoBehaviour
 
 	[Header("Combat")]
 	[SerializeField] private float _maxHp = 1000f;
+	private float _baseMaxHp;
 	[SerializeField] private float _attackAnimSpeed = 1f;
 	[SerializeField, Range(0f, 1f)] private float _attackFireTime = 0.3f;
 	[SerializeField] private float _attackDamage = 50f;
@@ -28,7 +31,6 @@ public class PlayerController : MonoBehaviour
 	private int _lastLoopIndex;
 
 	private float _footstepTimer;
-	private const float FOOTSTEP_INTERVAL = 0.3f;
 
 	private Animator _animator;
 	private CharacterController _controller;
@@ -37,8 +39,14 @@ public class PlayerController : MonoBehaviour
 	private TilePassability _passability;
 	private PlayerUpgrade _upgrade;
 
+	// FindClosestMonster 캐싱
+	private MonsterBase _cachedClosestMonster;
+	private float _closestMonsterCacheTimer;
+
+	// IDamageable
 	public float MaxHp => _maxHp;
 	public float CurrentHp => _currentHp;
+	public bool IsDead => _state == EState.Die;
 	public float Weight => _weight;
 
 	private EState _state = EState.None;
@@ -56,9 +64,12 @@ public class PlayerController : MonoBehaviour
 	}
 
 	public bool IsServing { get; set; } = false;
+	public bool IsIntroDrop { get; set; } = false;
 
 	private void Awake()
 	{
+		Instance = this;
+
 		_animator = GetComponent<Animator>();
 		_controller = GetComponent<CharacterController>();
 		_audioSource = GetComponent<AudioSource>();
@@ -66,6 +77,8 @@ public class PlayerController : MonoBehaviour
 		_upgrade = GetComponent<PlayerUpgrade>();
 		if (_upgrade == null)
 			_upgrade = gameObject.AddComponent<PlayerUpgrade>();
+
+		_controller.stepOffset = 0f;
 
 		if (GetComponent<EquipmentVisual>() == null)
 			gameObject.AddComponent<EquipmentVisual>();
@@ -84,7 +97,8 @@ public class PlayerController : MonoBehaviour
 
 	private void Start()
 	{
-		_maxHp += EquipmentManager.Instance.GetTotalMaxHpBonus();
+		_baseMaxHp = _maxHp;
+		_maxHp = _baseMaxHp + EquipmentManager.Instance.GetTotalMaxHpBonus();
 		_currentHp = _maxHp;
 		if (_hpBar != null)
 		{
@@ -93,8 +107,17 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
+	private void OnDestroy()
+	{
+		if (Instance == this)
+			Instance = null;
+	}
+
 	private void Update()
 	{
+		if (IsIntroDrop)
+			return;
+
 		if (GameManager.Instance.IsPaused)
 			return;
 
@@ -103,7 +126,6 @@ public class PlayerController : MonoBehaviour
 
 		Vector3 dir = GameManager.Instance.JoystickDir;
 		Vector3 moveDir = new Vector3(dir.x, 0, dir.y);
-		moveDir = (Quaternion.Euler(0, 45, 0) * moveDir).normalized;
 
 		if (moveDir != Vector3.zero)
 		{
@@ -117,7 +139,7 @@ public class PlayerController : MonoBehaviour
 			if (_footstepTimer <= 0f)
 			{
 				AudioManager.Instance?.PlayFootstep();
-				_footstepTimer = FOOTSTEP_INTERVAL;
+				_footstepTimer = GameConfig.Instance.footstepInterval;
 			}
 		}
 		else
@@ -127,7 +149,6 @@ public class PlayerController : MonoBehaviour
 			{
 				_attackTarget = target;
 
-				// 항상 몬스터 방향으로 회전
 				Vector3 lookDir = (target.transform.position - transform.position).normalized;
 				lookDir.y = 0;
 				if (lookDir != Vector3.zero)
@@ -135,11 +156,10 @@ public class PlayerController : MonoBehaviour
 
 				if (_state != EState.Attack)
 				{
-					// 공격 상태 최초 진입: 즉시 애니메이션 시작
 					_hasFired = false;
 					_lastLoopIndex = 0;
 					float equipAtkSpd = 1f + EquipmentManager.Instance.GetTotalSubStat(Define.ESubStatType.AttackSpeed) / 100f;
-				_animator.speed = _attackAnimSpeed * _upgrade.AttackSpeedMultiplier * equipAtkSpd;
+					_animator.speed = _attackAnimSpeed * _upgrade.AttackSpeedMultiplier * equipAtkSpd;
 					State = EState.Attack;
 				}
 				else
@@ -171,21 +191,43 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		transform.position = new Vector3(transform.position.x, 0, transform.position.z);
+		// Y좌표 고정: 인트로 낙하가 아닐 때만 적용
+		if (transform.position.y != 0f)
+			transform.position = new Vector3(transform.position.x, 0, transform.position.z);
 	}
 
 	/// <summary>
-	/// 가장 가까운 몬스터를 찾아 반환한다.
+	/// 가장 가까운 몬스터를 찾아 반환한다. 0.1초 주기로 캐싱하여 성능을 최적화한다.
 	/// </summary>
 	private MonsterBase FindClosestMonster()
 	{
-		MonsterBase[] monsters = FindObjectsByType<MonsterBase>(FindObjectsSortMode.None);
+		_closestMonsterCacheTimer -= Time.deltaTime;
+		if (_closestMonsterCacheTimer <= 0f)
+		{
+			_closestMonsterCacheTimer = GameConfig.Instance.closestMonsterCacheInterval;
+			_cachedClosestMonster = FindClosestMonsterInternal();
+		}
+
+		// 캐시된 몬스터가 죽었거나 null이면 즉시 재탐색
+		if (_cachedClosestMonster == null || _cachedClosestMonster.CurrentHp <= 0)
+		{
+			_cachedClosestMonster = FindClosestMonsterInternal();
+			_closestMonsterCacheTimer = GameConfig.Instance.closestMonsterCacheInterval;
+		}
+
+		return _cachedClosestMonster;
+	}
+
+	private MonsterBase FindClosestMonsterInternal()
+	{
+		var monsters = StageManager.Instance.AliveMonsters;
 		MonsterBase closest = null;
 		float minDist = float.MaxValue;
 
-		foreach (MonsterBase m in monsters)
+		for (int i = 0; i < monsters.Count; i++)
 		{
-			if (m.CurrentHp <= 0)
+			MonsterBase m = monsters[i];
+			if (m == null || m.CurrentHp <= 0)
 				continue;
 
 			float dist = Vector3.Distance(transform.position, m.transform.position);
@@ -258,11 +300,13 @@ public class PlayerController : MonoBehaviour
 			critChance = _upgrade.CritChance + equipCritChance,
 			critDamageMin = _upgrade.CritDamageMin + equipCritDamage,
 			critDamageMax = _upgrade.CritDamageMax + equipCritDamage,
+			knockbackForce = 3f,
+			playerWeight = _weight,
 		};
 
 		foreach (Vector3 dir in directions)
 		{
-			int totalCount = 1 + _upgrade.FrontArrowLevel;
+			int totalCount = (dir == baseDir) ? 1 + _upgrade.FrontArrowLevel : 1;
 			Vector3 perp = Vector3.Cross(Vector3.up, dir).normalized;
 
 			for (int i = 0; i < totalCount; i++)
@@ -271,12 +315,7 @@ public class PlayerController : MonoBehaviour
 				Vector3 spawnPos = transform.position + dir * 0.5f + perp * offset;
 				spawnPos.y = 1f;
 
-				GameObject go = ObjectPool.Instance.Get(_projectilePrefab);
-				go.transform.position = spawnPos;
-				go.transform.rotation = Quaternion.LookRotation(dir);
-				ProjectileBase proj = go.GetComponent<ProjectileBase>();
-				if (proj != null)
-					proj.Init(data);
+				ProjectileFactory.Create(_projectilePrefab, spawnPos, dir, data);
 			}
 		}
 	}
@@ -321,7 +360,7 @@ public class PlayerController : MonoBehaviour
 
 		_currentHp -= damage;
 
-		DamageTextSpawner.Spawn(transform.position + Vector3.up * 1.5f, damage, true);
+		DamageTextSpawner.Spawn(transform.position + Vector3.up * 1.5f, -damage, true);
 
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
@@ -339,7 +378,12 @@ public class PlayerController : MonoBehaviour
 			}
 
 			_currentHp = 0f;
+			if (_hpBar != null)
+				_hpBar.SetHP(_currentHp, _maxHp);
 			State = EState.Die;
+			if (_hpBar != null)
+				_hpBar.gameObject.SetActive(false);
+			StartCoroutine(GameOverSequence());
 		}
 	}
 
@@ -354,50 +398,43 @@ public class PlayerController : MonoBehaviour
 			_hpBar.SetHP(_currentHp, _maxHp);
 	}
 
+	public void Revive()
+	{
+		_currentHp = _maxHp;
+		if(_hpBar != null)
+		{
+			_hpBar.gameObject.SetActive(true);
+			_hpBar.SetHP(_currentHp, _maxHp);
+		}
+		StartCoroutine(ReviveSequence());
+		State = EState.Idle;
+	}
+
+	private IEnumerator GameOverSequence()
+	{
+		yield return new WaitForSeconds(2f);
+		UIManager.Instance.ShowAlive();
+	}
+
 	/// <summary>
 	/// 최대 HP를 증가시키고 일정량 즉시 회복한다.
 	/// </summary>
 	public void BoostHp(float maxHpPercent, float healPercent)
 	{
-		float addMax = _maxHp * maxHpPercent;
-		_maxHp += addMax;
+		float addMax = _baseMaxHp * maxHpPercent;
+		_baseMaxHp += addMax;
+		_maxHp = _baseMaxHp + EquipmentManager.Instance.GetTotalMaxHpBonus();
 		_currentHp = Mathf.Min(_currentHp + addMax * healPercent, _maxHp);
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);
 	}
 
 	/// <summary>
-	/// 능력 선택 시 즉시 효과를 적용한다.
+	/// 능력 선택 시 즉시 효과를 적용한다. Command Pattern으로 UpgradeEffectRegistry에 위임.
 	/// </summary>
 	public void ApplyUpgradeEffect(EUpgradeType type)
 	{
-		switch (type)
-		{
-			case EUpgradeType.WallPass:
-				if (_passability != null)
-					_passability.AddFlag(ETilePassFlag.WallPass);
-				ApplyWallPassCollisions();
-				break;
-			case EUpgradeType.WaterWalker:
-				if (_passability != null)
-					_passability.AddFlag(ETilePassFlag.WaterWalk);
-				ApplyWaterWalkCollisions();
-				break;
-			case EUpgradeType.Dwarf:
-				var dwarfInfo = UpgradeDatabase.GetInfo(EUpgradeType.Dwarf);
-				transform.localScale *= dwarfInfo?.scale ?? 0.9f;
-				break;
-			case EUpgradeType.Giant:
-				var giantInfo = UpgradeDatabase.GetInfo(EUpgradeType.Giant);
-				transform.localScale *= giantInfo?.scale ?? 1.1f;
-				break;
-			case EUpgradeType.HpBoost:
-				BoostHp(_upgrade.HpBoostPercent, _upgrade.HpBoostHealPercent);
-				break;
-			case EUpgradeType.FastGrowth:
-				ExpManager.Instance.SetMaxLevel(_upgrade.MaxPlayerLevel);
-				break;
-		}
+		UpgradeEffectRegistry.Apply(type, this, _upgrade);
 	}
 
 	/// <summary>
@@ -452,12 +489,14 @@ public class PlayerController : MonoBehaviour
 	{
 		MonsterBase monster = hit.gameObject.GetComponentInParent<MonsterBase>();
 		if (monster == null || monster.CurrentHp <= 0) return;
+
+		monster.TryContactDamage(this);
+
 		if (_weight <= monster.Weight) return;
-		Rigidbody rb = hit.rigidbody;
-		if (rb == null || rb.isKinematic) return;
 		Vector3 pushDir = hit.moveDirection;
 		pushDir.y = 0;
-		rb.AddForce(pushDir.normalized * (_weight - monster.Weight), ForceMode.Impulse);
+		float force = (_weight - monster.Weight) * 2f;
+		monster.PushAway(pushDir, force);
 	}
 
 	/// <summary>
@@ -466,8 +505,7 @@ public class PlayerController : MonoBehaviour
 	public void RecalculateMaxHp()
 	{
 		float ratio = _maxHp > 0 ? _currentHp / _maxHp : 1f;
-		float baseMax = _maxHp - EquipmentManager.Instance.GetTotalMaxHpBonus();
-		_maxHp = baseMax + EquipmentManager.Instance.GetTotalMaxHpBonus();
+		_maxHp = _baseMaxHp + EquipmentManager.Instance.GetTotalMaxHpBonus();
 		_currentHp = _maxHp * ratio;
 		if (_hpBar != null)
 			_hpBar.SetHP(_currentHp, _maxHp);

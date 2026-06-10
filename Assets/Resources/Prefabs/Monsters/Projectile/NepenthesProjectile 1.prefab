@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e071599a0e1b720428c7b05b4ff4609d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileBase
-  _speed: 5
+  _speed: 1
   _lifeTime: 3
   _knockbackForce: 0
   _isPlayerProjectile: 0
@@ -112,8 +112,8 @@ MonoBehaviour:
   _bounceEnabled: 0
   _maxBounces: 5
   _bounceRadius: 0.2
-  _arcHeight: 3
-  _arcDuration: 0.8
+  _arcHeight: 3.5
+  _arcDuration: 2
   _spinSpeed: 720
   _explosionPrefab: {fileID: 0}
 --- !u!135 &2149108038344902662

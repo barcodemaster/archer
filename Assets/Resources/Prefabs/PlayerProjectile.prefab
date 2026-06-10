@@ -169,7 +169,9 @@ MonoBehaviour:
   _bounceRadius: 0.2
   _arcHeight: 3
   _arcDuration: 0.8
+  _spinSpeed: 720
   _explosionPrefab: {fileID: 0}
+  _hitEffectPrefab: {fileID: 255548979746159036, guid: 5c02747361d15324285e11ee3da0156f, type: 3}
 --- !u!54 &6738238891684196686
 Rigidbody:
   m_ObjectHideFlags: 0

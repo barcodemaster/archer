@@ -13,7 +13,6 @@ public class Nepenthes : MonsterBase
 	[SerializeField] private GameObject _projectilePrefab;
 	[SerializeField] private float _scatterRadius = 1.5f;
 	[SerializeField] private int _projectileCount = 3;
-	[SerializeField] private float _projectileInterval = 0.15f;
 
 	private float _attackTimer;
 
@@ -52,8 +51,7 @@ public class Nepenthes : MonsterBase
 			Vector2 randomOffset = Random.insideUnitCircle * _scatterRadius;
 			Vector3 targetPos = Target.position + new Vector3(randomOffset.x, 0, randomOffset.y);
 			SpawnProjectile(targetPos);
-			if (i < _projectileCount - 1)
-				yield return new WaitForSeconds(_projectileInterval);
+			yield return null;
 		}
 		if (State != EState.Die)
 			State = EState.Idle;

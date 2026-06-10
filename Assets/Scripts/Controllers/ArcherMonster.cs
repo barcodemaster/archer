@@ -10,10 +10,11 @@ using static Define;
 public class ArcherMonster : MonsterBase
 {
 	[Header("Attack")]
-	[SerializeField] private float _attackRange = 10f;
 	[SerializeField] private float _attackCooldown = 4f;
 	[SerializeField] private float _warningDuration = 1.5f;
-	[SerializeField] private float _maxArrowDistance = 15f;
+	[SerializeField] private float _fireDelay = 0.4f;
+	[SerializeField] private int _maxBounceCount = 3;
+	[SerializeField] private float _projectileSpeed = 30f;
 	[SerializeField] private GameObject _projectilePrefab;
 	[SerializeField] private LineRenderer _lineRenderer;
 
@@ -55,9 +56,7 @@ public class ArcherMonster : MonsterBase
 
 		_attackTimer -= Time.deltaTime;
 
-		float distToPlayer = Vector3.Distance(transform.position, Target.position);
-
-		if (distToPlayer <= _attackRange && _attackTimer <= 0f)
+		if (_attackTimer <= 0f)
 		{
 			StartCoroutine(AttackSequence());
 			return;
@@ -104,7 +103,7 @@ public class ArcherMonster : MonsterBase
 			aimDir.y = 0;
 			aimDir.Normalize();
 
-			Vector3[] path = CalculateBouncePath(origin, aimDir, _maxArrowDistance);
+			Vector3[] path = CalculateBouncePath(origin, aimDir);
 
 			if (_lineRenderer != null)
 			{
@@ -125,6 +124,18 @@ public class ArcherMonster : MonsterBase
 		if (State == EState.Die)
 			yield break;
 
+		// 경고 후 발사 딜레이
+		float delayElapsed = 0f;
+		while (delayElapsed < _fireDelay)
+		{
+			if (State == EState.Die) yield break;
+			delayElapsed += Time.deltaTime;
+			yield return null;
+		}
+
+		if (State == EState.Die)
+			yield break;
+
 		// 최종 방향으로 화살 발사
 		Vector3 fireOrigin = new Vector3(transform.position.x, 1f, transform.position.z);
 		FireArrow(aimDir, fireOrigin);
@@ -137,18 +148,17 @@ public class ArcherMonster : MonsterBase
 	/// <summary>
 	/// 반사 경로를 계산한다. BlockObstacle에 부딪히면 반사하며 총 이동거리 소진까지 반복.
 	/// </summary>
-	private Vector3[] CalculateBouncePath(Vector3 origin, Vector3 direction, float remainDistance)
+	private Vector3[] CalculateBouncePath(Vector3 origin, Vector3 direction)
 	{
 		List<Vector3> points = new List<Vector3> { origin };
 		Vector3 pos = origin;
 		Vector3 dir = direction;
-		float dist = remainDistance;
-		int maxBounces = 10;
+		int maxBounces = _maxBounceCount;
 
-		while (dist > 0f && maxBounces-- > 0)
+		while (maxBounces-- > 0)
 		{
 			// RaycastAll로 모든 히트를 가져온 뒤 BlockObstacle만 필터링
-			RaycastHit[] hits = Physics.RaycastAll(pos + dir * 0.05f, dir, dist);
+			RaycastHit[] hits = Physics.RaycastAll(pos + dir * 0.05f, dir);
 			RaycastHit? wallHit = null;
 			float closestDist = float.MaxValue;
 
@@ -165,7 +175,6 @@ public class ArcherMonster : MonsterBase
 			{
 				RaycastHit hit = wallHit.Value;
 				points.Add(hit.point);
-				dist -= hit.distance;
 				Vector3 normal = hit.normal;
 				normal.y = 0;
 				normal.Normalize();
@@ -174,11 +183,7 @@ public class ArcherMonster : MonsterBase
 				dir.Normalize();
 				pos = hit.point;
 				continue;
-			}
-
-			// 벽을 만나지 않으면 남은 거리만큼 직진
-			points.Add(pos + dir * dist);
-			dist = 0f;
+			}			
 		}
 
 		return points.ToArray();
@@ -195,7 +200,8 @@ public class ArcherMonster : MonsterBase
 		GameObject go = ObjectPool.Instance.Get(_projectilePrefab);
 		go.transform.position = spawnPos;
 		go.transform.rotation = Quaternion.LookRotation(direction);
-		go.GetComponent<ProjectileBase>()?.Init(Damage);
+		ProjectileBase spawnedProjectile = go.GetComponent<ProjectileBase>();
+		spawnedProjectile.Init(Damage,_maxBounceCount,_projectileSpeed,100);
 	}
 
 	/// <summary>

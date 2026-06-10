@@ -35,7 +35,7 @@ public class ExpOrb : MonoBehaviour
 	{
 		_waiting = false;
 		_collecting = true;
-		PlayerController player = FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player != null)
 			_target = player.transform;
 		_elapsed = 0f;

@@ -213,6 +213,8 @@ public class TileMap : MonoBehaviour
 
 		List<Vector2Int> wallPositions = new List<Vector2Int>();
 		List<Vector2Int> waterPositions = new List<Vector2Int>();
+		List<Vector2Int> blockPositions = new List<Vector2Int>();
+		List<Vector2Int> spikePositions = new List<Vector2Int>();
 
 		for (int z = 0; z < _height; z++)
 		{
@@ -238,14 +240,17 @@ public class TileMap : MonoBehaviour
 					floor.GetComponent<Renderer>().sharedMaterial = mat;
 				}
 
-				// Spike 타일에 프리팹 배치
+				// Spike 타일에 프리팹 배치 (비주얼만 유지, 콜라이더는 병합)
 				if (tileType == ETileType.Spike && _spikePrefab != null)
 				{
 					GameObject spike = Instantiate(_spikePrefab, container);
 					spike.name = $"Spike_{x}_{z}";
 					spike.transform.position = tileCenter + Vector3.up * _blockYOffset;
-					if (spike.GetComponent<SpikeTile>() == null)
-						spike.AddComponent<SpikeTile>();
+					foreach (var col in spike.GetComponentsInChildren<Collider>())
+						Object.DestroyImmediate(col);
+					var st = spike.GetComponent<SpikeTile>();
+					if (st != null) Object.DestroyImmediate(st);
+					spikePositions.Add(new Vector2Int(x, z));
 				}
 
 				// Wall/Water 위치 수집 (개별 콜라이더 대신 병합)
@@ -254,14 +259,16 @@ public class TileMap : MonoBehaviour
 				else if (tileType == ETileType.Wall)
 					wallPositions.Add(new Vector2Int(x, z));
 
-				// Block prefab
+				// Block prefab (비주얼만 유지, 콜라이더는 병합)
 				int blockIdx = GetBlockIndex(x, z);
 				if (blockIdx >= 0 && _blockPrefabs != null && blockIdx < _blockPrefabs.Length && _blockPrefabs[blockIdx] != null)
 				{
 					GameObject block = Instantiate(_blockPrefabs[blockIdx], container);
 					block.name = $"Block_{x}_{z}";
 					block.transform.position = tileCenter + Vector3.up * _blockYOffset;
-					block.AddComponent<BlockObstacle>();
+					foreach (var col in block.GetComponentsInChildren<Collider>())
+						Object.DestroyImmediate(col);
+					blockPositions.Add(new Vector2Int(x, z));
 				}
 			}
 		}
@@ -269,9 +276,11 @@ public class TileMap : MonoBehaviour
 		// 단일 FloorCollider 생성 (맵 전체 커버)
 		CreateFloorCollider(container);
 
-		// Wall/Water Collider 병합
+		// Wall/Water/Block/Spike Collider 병합
 		CreateMergedColliders<BlockObstacle>(wallPositions, container, "WallCollider");
 		CreateMergedColliders<WaterObstacle>(waterPositions, container, "WaterCollider");
+		CreateMergedColliders<BlockObstacle>(blockPositions, container, "BlockCollider");
+		CreateMergedTriggerColliders<SpikeTile>(spikePositions, container, "SpikeCollider");
 
 		// ExitDoor 배치
 		if (_exitPoint.x >= 0 && _exitDoorPrefab != null)
@@ -365,6 +374,64 @@ public class TileMap : MonoBehaviour
 			BoxCollider bc = obj.AddComponent<BoxCollider>();
 			bc.size = new Vector3(sizeX, 2f, sizeZ);
 			bc.isTrigger = false;
+			obj.AddComponent<T>();
+		}
+	}
+
+	/// <summary>
+	/// Greedy rectangle merge로 인접 타일을 병합하여 isTrigger BoxCollider를 생성한다.
+	/// </summary>
+	private void CreateMergedTriggerColliders<T>(List<Vector2Int> positions, Transform container, string namePrefix) where T : Component
+	{
+		if (positions.Count == 0) return;
+
+		HashSet<Vector2Int> remaining = new HashSet<Vector2Int>(positions);
+
+		while (remaining.Count > 0)
+		{
+			Vector2Int start = default;
+			int minVal = int.MaxValue;
+			foreach (var p in remaining)
+			{
+				int val = p.y * _width + p.x;
+				if (val < minVal) { minVal = val; start = p; }
+			}
+
+			int xEnd = start.x;
+			while (remaining.Contains(new Vector2Int(xEnd + 1, start.y)))
+				xEnd++;
+
+			int zEnd = start.y;
+			bool canExpand = true;
+			while (canExpand)
+			{
+				int nextZ = zEnd + 1;
+				for (int xi = start.x; xi <= xEnd; xi++)
+				{
+					if (!remaining.Contains(new Vector2Int(xi, nextZ)))
+					{
+						canExpand = false;
+						break;
+					}
+				}
+				if (canExpand) zEnd = nextZ;
+			}
+
+			for (int zi = start.y; zi <= zEnd; zi++)
+				for (int xi = start.x; xi <= xEnd; xi++)
+					remaining.Remove(new Vector2Int(xi, zi));
+
+			int sizeX = xEnd - start.x + 1;
+			int sizeZ = zEnd - start.y + 1;
+			float centerX = _origin.x + start.x + (sizeX - 1) / 2f;
+			float centerZ = _origin.z + start.y + (sizeZ - 1) / 2f;
+
+			GameObject obj = new GameObject($"{namePrefix}_{start.x}_{start.y}");
+			obj.transform.SetParent(container);
+			obj.transform.position = new Vector3(centerX, _origin.y + 1f, centerZ);
+			BoxCollider bc = obj.AddComponent<BoxCollider>();
+			bc.size = new Vector3(sizeX, 2f, sizeZ);
+			bc.isTrigger = true;
 			obj.AddComponent<T>();
 		}
 	}

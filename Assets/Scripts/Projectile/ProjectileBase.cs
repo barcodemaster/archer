@@ -30,6 +30,9 @@ public class ProjectileBase : MonoBehaviour
 	[Header("Explosion")]
 	[SerializeField] private GameObject _explosionPrefab;
 
+	[Header("Hit Effect")]
+	[SerializeField] private GameObject _hitEffectPrefab;
+
 	private float _damage;
 	private bool _hasHit;
 	private bool _destroyed;
@@ -44,6 +47,7 @@ public class ProjectileBase : MonoBehaviour
 	private float _critChance;
 	private float _critDamageMin;
 	private float _critDamageMax;
+	private float _playerWeight;
 	private HashSet<int> _hitMonsterIds = new();
 
 	// Arc
@@ -76,6 +80,18 @@ public class ProjectileBase : MonoBehaviour
 			_velocity = transform.forward * _speed;
 	}
 
+	public void Init(float damage, int maxBounce, float speed, float lifeTime)
+	{
+		_damage = damage;
+		_moveDirection = transform.forward;
+		_speed = speed;
+		_lifeTime = lifeTime;
+		_maxBounces = maxBounce;
+
+		if (_bounceEnabled)
+			_velocity = transform.forward * _speed;		
+	}
+
 	/// <summary>
 	/// 업그레이드 데이터로 초기화.
 	/// </summary>
@@ -89,6 +105,8 @@ public class ProjectileBase : MonoBehaviour
 		_critChance = data.critChance;
 		_critDamageMin = data.critDamageMin;
 		_critDamageMax = data.critDamageMax;
+		_knockbackForce = data.knockbackForce;
+		_playerWeight = data.playerWeight;
 		_moveDirection = transform.forward;
 		if (data.wallBounce)
 		{
@@ -114,7 +132,7 @@ public class ProjectileBase : MonoBehaviour
 		// 몬스터 발사체 속도 감속
 		if (!_isPlayerProjectile)
 		{
-			PlayerUpgrade upgrade = Object.FindAnyObjectByType<PlayerUpgrade>();
+			PlayerUpgrade upgrade = PlayerController.Instance?.GetComponent<PlayerUpgrade>();
 			if (upgrade != null)
 				_speed = _baseSpeed * upgrade.SlowProjectileMultiplier;
 			else
@@ -205,7 +223,6 @@ public class ProjectileBase : MonoBehaviour
 			}
 
 			transform.position += _velocity * dt;
-			transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
 
 			if (_velocity.sqrMagnitude > 0.001f)
 				transform.rotation = Quaternion.LookRotation(_velocity);
@@ -227,7 +244,7 @@ public class ProjectileBase : MonoBehaviour
 		if (t >= 1f)
 		{
 			transform.position = _targetPos;
-			ReturnToPool();
+			Explode();
 			return;
 		}
 
@@ -265,6 +282,7 @@ public class ProjectileBase : MonoBehaviour
 				if (_headshotChance > 0f && !monster.IsBoss && Random.value < _headshotChance)
 				{
 					monster.InstantKill();
+					SpawnHitEffect(monster.transform.position);
 					DamageTextSpawner.SpawnHeadshot(monster.transform.position + Vector3.up);
 				}
 				else
@@ -274,9 +292,10 @@ public class ProjectileBase : MonoBehaviour
 					if (isCrit)
 						finalDamage *= Random.Range(_critDamageMin, _critDamageMax);
 
-					if (_knockbackForce > 0f)
+					if (_knockbackForce > 0f && !monster.IsImmovable && !monster.IsBoss && monster.Weight < _playerWeight)
 						monster.Knockback(transform.forward, _knockbackForce);
 					monster.TakeDamage(finalDamage, isCrit);
+					SpawnHitEffect(monster.transform.position);
 				}
 
 				// 반동(리코셰) > 관통 > 파괴
@@ -310,6 +329,7 @@ public class ProjectileBase : MonoBehaviour
 			{
 				_hasHit = true;
 				player.TakeDamage(_damage);
+				SpawnHitEffect(player.transform.position);
 
 				if (_bounceEnabled)
 					Explode();
@@ -324,13 +344,14 @@ public class ProjectileBase : MonoBehaviour
 	/// </summary>
 	private MonsterBase FindNearestMonster(float radius)
 	{
-		MonsterBase[] monsters = FindObjectsByType<MonsterBase>(FindObjectsSortMode.None);
+		var monsters = StageManager.Instance.AliveMonsters;
 		MonsterBase nearest = null;
 		float minDist = radius;
 
-		foreach (MonsterBase m in monsters)
+		for (int i = 0; i < monsters.Count; i++)
 		{
-			if (m.CurrentHp <= 0) continue;
+			MonsterBase m = monsters[i];
+			if (m == null || m.CurrentHp <= 0) continue;
 			if (_hitMonsterIds.Contains(m.GetInstanceID())) continue;
 
 			float dist = Vector3.Distance(transform.position, m.transform.position);
@@ -342,6 +363,14 @@ public class ProjectileBase : MonoBehaviour
 		}
 
 		return nearest;
+	}
+
+	private void SpawnHitEffect(Vector3 position)
+	{
+		if (_hitEffectPrefab == null) return;
+		GameObject fx = ObjectPool.Instance.Get(_hitEffectPrefab);
+		fx.transform.position = position;
+		fx.transform.rotation = Quaternion.identity;
 	}
 
 	private void Explode()

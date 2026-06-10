@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class UIManager : Singleton<UIManager>
@@ -9,12 +10,60 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject _pauseLayer;
     [SerializeField] private GameObject _stageProgressLayer;
     [SerializeField] private GameObject _equipmentLayer;
+    [SerializeField] private GameObject _gameOverLayer;
+    [SerializeField] private GameObject _aliveLayer;
+    [SerializeField] private GameObject _angelLayer;
 
     private Image _fadeImage;
+    private UI_PausePanel _pausePanel;
 
     private void Start()
     {
         CreateFadeImage();
+        _pausePanel = FindAnyObjectByType<UI_PausePanel>();
+    }
+
+    private void Update()
+    {
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            OnBackButtonPressed();
+    }
+
+    /// <summary>
+    /// Android 뒤로가기 버튼 또는 ESC 키 입력 처리.
+    /// </summary>
+    private void OnBackButtonPressed()
+    {
+        if (_equipmentLayer != null && _equipmentLayer.activeSelf)
+        {
+            HideEquipment();
+            return;
+        }
+
+        if (_levelUpLayer != null && _levelUpLayer.activeSelf)
+            return;
+
+        if (_angelLayer != null && _angelLayer.activeSelf)
+            return;
+
+        if (_aliveLayer != null && _aliveLayer.activeSelf)
+            return;
+
+        if (_gameOverLayer != null && _gameOverLayer.activeSelf)
+            return;
+
+        if (GameManager.Instance.IsPaused)
+        {
+            var pausePanel = _pausePanel;
+            if (pausePanel != null)
+                pausePanel.OnResumeClicked();
+        }
+        else
+        {
+            var pausePanel = _pausePanel;
+            if (pausePanel != null)
+                pausePanel.OnPauseClicked();
+        }
     }
 
     /// <summary>
@@ -61,7 +110,7 @@ public class UIManager : Singleton<UIManager>
     {
         if (_fadeImage == null) yield break;
 
-        _fadeImage.raycastTarget = true;
+        _fadeImage.raycastTarget = (toAlpha > 0f);
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -78,6 +127,11 @@ public class UIManager : Singleton<UIManager>
         if (toAlpha == 0f)
             _fadeImage.raycastTarget = false;
     }
+
+    public void ShowJoystick()
+    {
+        if(_joystickLayer != null) _joystickLayer.SetActive(true);
+	}
 
     /// <summary>
     /// 레벨업 UI를 표시하고 조이스틱을 숨긴다.
@@ -179,6 +233,39 @@ public class UIManager : Singleton<UIManager>
         GameManager.Instance.IsPaused = true;
     }
 
+	/// <summary>
+	/// 부활 패널을 표시한다.
+	/// </summary>
+    public void ShowAlive()
+    {
+        if(_joystickLayer != null) _joystickLayer.SetActive(false);
+        if(_aliveLayer != null)
+        {
+            var panel = _aliveLayer.GetComponent<UI_AlivePanel>();
+            if (panel != null)
+            { 
+                panel.Show();
+                _aliveLayer.SetActive(true);
+            }
+		}
+	}
+
+	/// <summary>
+	/// 게임오버 패널을 표시한다.
+	/// </summary>
+	public void ShowGameOver(int stageIndex, int gold)
+    {
+        if (_joystickLayer != null) _joystickLayer.SetActive(false);
+        if (_gameOverLayer != null)
+        {
+            var panel = _gameOverLayer.GetComponent<UI_GameOverPanel>();
+            if (panel != null)
+                panel.Show(stageIndex, gold);
+            else
+                _gameOverLayer.SetActive(true);
+        }
+    }
+
     /// <summary>
     /// 장비창을 숨기고 게임을 재개한다.
     /// </summary>
@@ -190,6 +277,36 @@ public class UIManager : Singleton<UIManager>
             if (panel != null) panel.Close();
             _equipmentLayer.SetActive(false);
         }
+        if (_joystickLayer != null) _joystickLayer.SetActive(true);
+        Time.timeScale = 1f;
+        GameManager.Instance.IsPaused = false;
+    }
+
+    /// <summary>
+    /// 천사 축복 패널을 표시하고 조이스틱을 숨긴다.
+    /// </summary>
+    public void ShowAngelPanel(AngelNPC angel = null)
+    {
+        if (_joystickLayer != null)
+        {
+            UI_Joystick joystick = _joystickLayer.GetComponentInChildren<UI_Joystick>();
+            if (joystick != null)
+                joystick.ForceReset();
+            _joystickLayer.SetActive(false);
+        }
+        if (_angelLayer != null)
+        {
+            var panel = _angelLayer.GetComponent<UI_AngelPanel>();
+            if (panel != null) panel.Show(angel);
+        }
+    }
+
+    /// <summary>
+    /// 천사 축복 패널을 숨기고 조이스틱을 복원한다.
+    /// </summary>
+    public void HideAngelPanel()
+    {
+        if (_angelLayer != null) _angelLayer.SetActive(false);
         if (_joystickLayer != null) _joystickLayer.SetActive(true);
         Time.timeScale = 1f;
         GameManager.Instance.IsPaused = false;

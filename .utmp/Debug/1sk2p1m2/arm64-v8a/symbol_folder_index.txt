@@ -1,0 +1,1 @@
+C:\Unity\Archer\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\Debug\1sk2p1m2\obj\arm64-v8a

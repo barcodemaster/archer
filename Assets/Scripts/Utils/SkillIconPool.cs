@@ -15,7 +15,9 @@ public class SkillIconPool : MonoBehaviour
         // 초기 풀 생성 (prefab이 지정돼 있을 때만)
         if (_iconPrefab == null)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("SkillIconPool: _iconPrefab is not assigned.");
+#endif
             return;
         }
         for (int i = 0; i < _initialSize; i++)

@@ -74,6 +74,15 @@ public class UI_EquipmentPanel : MonoBehaviour
 	/// </summary>
 	public void Refresh()
 	{
+		Canvas.ForceUpdateCanvases();
+
+		// viewport inset 적용 후 레이아웃을 즉시 재계산하여 rect.width가 0이 되는 문제 방지
+		ScrollRect scrollRect = _inventoryContent != null
+			? _inventoryContent.GetComponentInParent<ScrollRect>()
+			: null;
+		if (scrollRect != null && scrollRect.viewport != null)
+			LayoutRebuilder.ForceRebuildLayoutImmediate(scrollRect.viewport);
+
 		AdjustGridCellSize();
 		RefreshEquipSlots();
 		RefreshInventoryList();
@@ -140,10 +149,25 @@ public class UI_EquipmentPanel : MonoBehaviour
 
 		var inventory = EquipmentManager.Instance.Inventory;
 
+		// 미장착 아이템만 모아 등급 내림차순 → 부위 오름차순 정렬
+		List<EquipmentData> sorted = new List<EquipmentData>();
 		foreach (var item in inventory)
 		{
-			if (item.isEquipped) continue;
+			if (!item.isEquipped)
+				sorted.Add(item);
+		}
+		sorted.Sort((a, b) =>
+		{
+			EquipmentTable ta = EquipmentDatabase.GetById(a.tableId);
+			EquipmentTable tb = EquipmentDatabase.GetById(b.tableId);
+			if (ta == null || tb == null) return 0;
+			int gradeCompare = tb.grade.CompareTo(ta.grade);
+			if (gradeCompare != 0) return gradeCompare;
+			return ta.slot.CompareTo(tb.slot);
+		});
 
+		foreach (var item in sorted)
+		{
 			EquipmentTable table = EquipmentDatabase.GetById(item.tableId);
 			if (table == null) continue;
 
@@ -195,12 +219,16 @@ public class UI_EquipmentPanel : MonoBehaviour
 	{
 		if (_playerModelImage == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] _playerModelImage is null. Check Inspector.");
+#endif
 			return;
 		}
 		if (_modelCamera == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] _modelCamera is null. Check Inspector.");
+#endif
 			return;
 		}
 
@@ -223,21 +251,27 @@ public class UI_EquipmentPanel : MonoBehaviour
 		GameObject source = _playerModelPrefab;
 		if (source == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] _playerModelPrefab is null. Falling back to scene player.");
-			PlayerController player = FindAnyObjectByType<PlayerController>();
+#endif
+			PlayerController player = PlayerController.Instance;
 			if (player != null)
 				source = player.gameObject;
 		}
 
 		if (source == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] No player source found. Model will not be displayed.");
+#endif
 			return;
 		}
 
 		if (_modelSpawnPoint == null)
 		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] _modelSpawnPoint is null. Check Inspector.");
+#endif
 			return;
 		}
 
@@ -256,7 +290,11 @@ public class UI_EquipmentPanel : MonoBehaviour
 		if (modelLayer >= 0)
 			SetLayerRecursive(_modelInstance, modelLayer);
 		else
+		{
+#if UNITY_EDITOR
 			Debug.LogWarning("[EquipmentPanel] EquipmentModel layer not found. Camera culling may not work.");
+#endif
+		}
 
 		// Idle 애니메이션 재생 (자식에 Animator가 있는 경우도 대응)
 		Animator anim = _modelInstance.GetComponentInChildren<Animator>();
@@ -305,7 +343,7 @@ public class UI_EquipmentPanel : MonoBehaviour
 		float boundsHeight = bounds.size.y;
 		float boundsWidth = bounds.size.x;
 		float fov = _modelCamera.fieldOfView;
-		float padding = 1.5f;
+		float padding = 1.2f;
 
 		// 세로 기준 거리
 		float distanceForHeight = (boundsHeight * padding * 0.5f) / Mathf.Tan(fov * 0.5f * Mathf.Deg2Rad);
@@ -378,8 +416,6 @@ public class UI_EquipmentPanel : MonoBehaviour
 			scrollRect.verticalScrollbar = null;
 		}
 
-		scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
-
 		// Content RectTransform: top-stretch, pivot 상단
 		RectTransform contentRect = _inventoryContent.GetComponent<RectTransform>();
 		if (contentRect != null)
@@ -394,8 +430,9 @@ public class UI_EquipmentPanel : MonoBehaviour
 		if (grid == null)
 			grid = _inventoryContent.gameObject.AddComponent<GridLayoutGroup>();
 
+		//grid.padding = new RectOffset(10, 10, 10, 10);
 		grid.cellSize = new Vector2(120f, 120f);
-		grid.spacing = new Vector2(10f, 10f);
+		//grid.spacing = new Vector2(10f, 10f);
 		grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
 		grid.startAxis = GridLayoutGroup.Axis.Horizontal;
 		grid.childAlignment = TextAnchor.UpperLeft;
@@ -411,8 +448,15 @@ public class UI_EquipmentPanel : MonoBehaviour
 		fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
 		RectTransform viewportRt = scrollRect.viewport;
-		if (viewportRt != null && viewportRt.GetComponent<RectMask2D>() == null)
-			viewportRt.gameObject.AddComponent<RectMask2D>();
+		if (viewportRt != null)
+		{
+			float inset = 40f;
+			viewportRt.offsetMin = new Vector2(inset, inset);
+			viewportRt.offsetMax = new Vector2(-inset, -inset);
+
+			if (viewportRt.GetComponent<RectMask2D>() == null)
+				viewportRt.gameObject.AddComponent<RectMask2D>();
+		}
 	}
 
 	/// <summary>

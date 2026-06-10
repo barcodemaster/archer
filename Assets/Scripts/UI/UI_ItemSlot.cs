@@ -13,7 +13,8 @@ public class UI_ItemSlot : MonoBehaviour
 	[SerializeField] private TextMeshProUGUI _levelText;
 
 	private EquipmentData _item;
-	private UI_EquipmentPanel _panel;
+	private UI_EquipmentPanel _equipmentPanel;
+	private UI_GameOverPanel _gameOverPanel;
 
 	public EquipmentData Item => _item;
 
@@ -23,7 +24,7 @@ public class UI_ItemSlot : MonoBehaviour
 	public void SetItem(EquipmentData item, EquipmentTable table, UI_EquipmentPanel panel)
 	{
 		_item = item;
-		_panel = panel;
+		_equipmentPanel = panel;
 
 		ApplyGradeBackground(table.grade);
 
@@ -45,6 +46,38 @@ public class UI_ItemSlot : MonoBehaviour
 		}
 	}
 
+	public void SetItem(EquipmentData item, EquipmentTable table, UI_GameOverPanel panel)
+	{
+		_item = item;
+		_gameOverPanel = panel;
+
+		ApplyGradeBackground(table.grade);
+
+		if (_iconImage != null)
+		{
+			Sprite sprite = IconHelper.GetSprite(table.icon);
+			_iconImage.sprite = sprite;
+			_iconImage.enabled = sprite != null;
+		}
+
+		if (_levelText != null)
+			_levelText.text = $"Lv.{item.level}";
+
+		Button btn = GetComponent<Button>();
+		if (btn != null)
+		{
+			btn.onClick.RemoveAllListeners();
+			btn.onClick.AddListener(OnClick);
+		}
+	}
+
+	public void SetItem(int count, Sprite icon, UI_GameOverPanel panel)
+	{
+		_bgImage.color = Color.gray;
+		_iconImage.sprite = icon;
+		_levelText.text = $"x{count}";
+	}
+
 	/// <summary>
 	/// 등급별 배경 이미지를 적용한다.
 	/// </summary>
@@ -59,7 +92,7 @@ public class UI_ItemSlot : MonoBehaviour
 
 	private void OnClick()
 	{
-		if (_panel != null)
-			_panel.OnItemSlotClicked(_item);
+		if (_equipmentPanel != null)
+			_equipmentPanel.OnItemSlotClicked(_item);
 	}
 }

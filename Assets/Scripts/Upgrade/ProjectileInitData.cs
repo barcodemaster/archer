@@ -9,4 +9,6 @@ public struct ProjectileInitData
 	public float critChance;
 	public float critDamageMin;
 	public float critDamageMax;
+	public float knockbackForce;
+	public float playerWeight;
 }

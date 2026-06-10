@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e071599a0e1b720428c7b05b4ff4609d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileBase
-  _speed: 25
+  _speed: 20
   _lifeTime: 1
   _knockbackForce: 0
   _isPlayerProjectile: 0
@@ -137,3 +137,4 @@ MonoBehaviour:
   _arcDuration: 0.8
   _spinSpeed: 720
   _explosionPrefab: {fileID: 0}
+  _hitEffectPrefab: {fileID: 255548979746159036, guid: 5c02747361d15324285e11ee3da0156f, type: 3}

@@ -80,6 +80,21 @@ public class Define
 
 	public enum EEquipSlot { Weapon, Top, Bottom, Bracelet, Ring1, Ring2, Pet1, Pet2 }
 	public enum EEquipGrade { Common, Uncommon, Rare, Epic, Legendary }
+
+	/// <summary>
+	/// 슬롯의 UI 표시 이름을 반환한다. Ring1/Ring2 → "Ring", Pet1/Pet2 → "Pet".
+	/// </summary>
+	public static string GetSlotDisplayName(EEquipSlot slot)
+	{
+		switch (slot)
+		{
+			case EEquipSlot.Ring1:
+			case EEquipSlot.Ring2: return "Ring";
+			case EEquipSlot.Pet1:
+			case EEquipSlot.Pet2:  return "Pet";
+			default:               return slot.ToString();
+		}
+	}
 	public enum EMainStatType { Attack, MaxHP }
 	public enum ESubStatType { AttackSpeed, CritChance, CritDamage, DamageResistance }
 
@@ -115,7 +130,7 @@ public class Define
 			EEquipGrade.Uncommon  => "GradeBg_UnCommon",
 			EEquipGrade.Rare      => "GradeBg_Rare",
 			EEquipGrade.Epic      => "GradeBg_Epic",
-			EEquipGrade.Legendary => "GradeBg_Epic",
+			EEquipGrade.Legendary => "GradeBg_Epic", // Legendary: Epic 배경을 공유 (별도 스프라이트 없음)
 			_                     => "GradeBg_Common",
 		};
 

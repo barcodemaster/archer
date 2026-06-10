@@ -12,16 +12,18 @@ public class UI_LevelUp : MonoBehaviour
 	[SerializeField] private GameObject _panel;
 
 	[Header("Roulette")]
-	[SerializeField] private float _spinDuration = 2.0f;
+	[SerializeField] private float _spinDuration = 1f;
 	[SerializeField] private float _stopInterval = 0.5f;
 	[SerializeField] private float _delayShowPanel = 1.5f;
 
 private Queue<int> _pendingLevelUps = new Queue<int>();
 	private bool _isShowing = false;
+	private bool _isIntro = false;
 
 	private int _tapCount;
 	private bool _isAnimating;
 	private Coroutine _rouletteCoroutine;
+	private ExpManager _expManager;
 
 	private void Start()
 	{
@@ -37,7 +39,8 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 			panelBtn.onClick.AddListener(OnPanelTapped);
 		}
 
-		ExpManager.Instance.OnLevelUp += OnLevelUp;
+		_expManager = ExpManager.Instance;
+		_expManager.OnLevelUp += OnLevelUp;
 
 		for (int i = 0; i < _slots.Length; i++)
 		{
@@ -48,8 +51,39 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 
 	private void OnDestroy()
 	{
-		if (ExpManager.Instance != null)
-			ExpManager.Instance.OnLevelUp -= OnLevelUp;
+		if (_expManager != null)
+			_expManager.OnLevelUp -= OnLevelUp;
+	}
+
+	/// <summary>
+	/// 인트로 스테이지에서 레벨업 없이 능력 룰렛을 직접 연다.
+	/// </summary>
+	public void ShowIntro()
+	{
+		gameObject.SetActive(true);
+		_isShowing = true;
+		_isIntro = true;
+		UIManager.Instance.ShowLevelUp();
+		_panel.SetActive(true);
+		AudioManager.Instance?.PlayUpgradePanelOpen();
+		Time.timeScale = 0f;
+		GameManager.Instance.IsPaused = true;
+		UIManager.Instance.ResetEventSystem();
+
+		if (_titleText != null) _titleText.text = "능력을 선택하세요!";
+		if (_levelText != null) _levelText.text = "";
+		if (_subtitleText != null) _subtitleText.text = "모험을 시작할 능력을 골라보세요!";
+
+		List<UpgradeInfo> picks = UpgradeDatabase.PickRandom(3);
+		for (int i = 0; i < _slots.Length; i++)
+		{
+			_slots[i].SetUpgrade(picks[i]);
+			_slots[i].StartSpin();
+		}
+
+		_tapCount = 0;
+		_isAnimating = true;
+		_rouletteCoroutine = StartCoroutine(RouletteStopCoroutine());
 	}
 
 	private void OnLevelUp(int level)
@@ -149,7 +183,7 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 	private void OnSlotSelected(int idx)
 	{
 		UpgradeInfo selected = _slots[idx].Assigned;
-		PlayerController player = FindAnyObjectByType<PlayerController>();
+		PlayerController player = PlayerController.Instance;
 		if (player != null)
 		{
 			PlayerUpgrade upgrade = player.GetComponent<PlayerUpgrade>();
@@ -166,10 +200,15 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 
 	private void Close()
 	{
+		bool wasIntro = _isIntro;
 		_isShowing = false;
+		_isIntro = false;
 		_panel.SetActive(false);
 		UIManager.Instance.HideLevelUp();
 		Time.timeScale = 1f;
 		GameManager.Instance.IsPaused = false;
+
+		if (wasIntro)
+			StageManager.Instance.OnIntroCompleted();
 	}
 }

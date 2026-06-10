@@ -180,7 +180,7 @@ public class EquipmentManager : Singleton<EquipmentManager>
 	public EEquipSlot FindAvailableSlot(EquipmentData item)
 	{
 		EquipmentTable table = EquipmentDatabase.GetById(item.tableId);
-		if (table == null) return table.slot;
+		if (table == null) return EEquipSlot.Weapon;
 
 		if (table.slot == EEquipSlot.Ring1)
 		{
