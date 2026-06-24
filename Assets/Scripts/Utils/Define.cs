@@ -98,6 +98,21 @@ public class Define
 	public enum EMainStatType { Attack, MaxHP }
 	public enum ESubStatType { AttackSpeed, CritChance, CritDamage, DamageResistance }
 
+	public enum EPetState { Patrol, ReturnToPlayer, Chase, Attack }
+
+	public enum EAchievementType
+	{
+		KillCount,
+		StageClear,
+		LevelReached,
+		GoldEarned,
+		EquipmentCollected,
+		BossKill,
+		UpgradeSelected,
+	}
+
+	public enum EAchievementReward { Gold }
+
 	/// <summary>
 	/// 등급별 색상을 반환한다.
 	/// </summary>

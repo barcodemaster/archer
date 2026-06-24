@@ -20,4 +20,5 @@ public class EquipmentTable
 	public int goldCostPerLevel;
 	public int dropWeight;
 	public string prefab;  // Resources 경로 (예: "Prefabs/PP_Theme_02_Bow_001")
+	public float attackCooldown; // 0이면 GameConfig 기본값 사용
 }

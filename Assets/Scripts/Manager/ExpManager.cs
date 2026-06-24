@@ -38,6 +38,13 @@ public class ExpManager : Singleton<ExpManager>
 			_currentExp -= ExpToNextLevel;
 			_level++;
 			AudioManager.Instance.PlayLevelUp();
+
+			// 레벨업 시 최대체력의 30% 회복
+			PlayerController player = PlayerController.Instance;
+			if (player != null)
+				player.Heal(player.MaxHp * 0.3f);
+
+			AchievementManager.Instance.SetProgress(Define.EAchievementType.LevelReached, _level);
 			OnLevelUp?.Invoke(_level);
 
 			GameObject playerObj = GameObject.FindWithTag("Player");

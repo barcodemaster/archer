@@ -67180,6 +67180,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6521584791453984462}
   - component: {fileID: 1634141243431450135}
+  - component: {fileID: 443473006952015826}
+  - component: {fileID: 980329451679325217}
   m_Layer: 0
   m_Name: Stage23
   m_TagString: Untagged
@@ -67338,6 +67340,41 @@ MonoBehaviour:
   _backgroundExtent: 10
   _backgroundYOffset: -0.5
   _floorThickness: 0.1
+--- !u!114 &443473006952015826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5768183246336328062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7887186e26137d84abc7901d27f09abc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapDecorationController
+  _leftDecorationPrefabs: []
+  _rightDecorationPrefabs: []
+  _xOffset: 1.5
+  _spacing: 2
+  _yOffset: 0
+  _extraExtent: 3
+  _scaleRange: {x: 0.8, y: 1.2}
+--- !u!114 &980329451679325217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5768183246336328062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec36f414b7a3513439ecdb106da4e6f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeFogController
+  _fogColor: {r: 1, g: 1, b: 1, a: 0.6}
+  _fogDepth: 5
+  _fogY: 0.1
+  _extraWidth: 10
 --- !u!1 &5776084087012036907
 GameObject:
   m_ObjectHideFlags: 0

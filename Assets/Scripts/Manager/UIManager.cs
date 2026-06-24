@@ -13,9 +13,11 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject _gameOverLayer;
     [SerializeField] private GameObject _aliveLayer;
     [SerializeField] private GameObject _angelLayer;
+    [SerializeField] private GameObject _achievementLayer;
 
     private Image _fadeImage;
     private UI_PausePanel _pausePanel;
+    private GameObject _cheatLayer;
 
     private void Start()
     {
@@ -34,6 +36,12 @@ public class UIManager : Singleton<UIManager>
     /// </summary>
     private void OnBackButtonPressed()
     {
+        if (_cheatLayer != null && _cheatLayer.activeSelf)
+        {
+            HideCheat();
+            return;
+        }
+
         if (_equipmentLayer != null && _equipmentLayer.activeSelf)
         {
             HideEquipment();
@@ -310,5 +318,67 @@ public class UIManager : Singleton<UIManager>
         if (_joystickLayer != null) _joystickLayer.SetActive(true);
         Time.timeScale = 1f;
         GameManager.Instance.IsPaused = false;
+    }
+
+    /// <summary>
+    /// 업적 패널을 표시한다.
+    /// </summary>
+    public void ShowAchievement()
+    {
+        if (_achievementLayer != null)
+        {
+            var panel = _achievementLayer.GetComponent<UI_AchievementPanel>();
+            if (panel != null) panel.Open();
+        }
+    }
+
+    /// <summary>
+    /// 업적 패널을 숨긴다.
+    /// </summary>
+    public void HideAchievement()
+    {
+        if (_achievementLayer != null)
+        {
+            var panel = _achievementLayer.GetComponent<UI_AchievementPanel>();
+            if (panel != null) panel.Close();
+        }
+    }
+
+    /// <summary>
+    /// 치트 패널을 표시한다.
+    /// </summary>
+    public void ShowCheat()
+    {
+        if (_cheatLayer == null)
+        {
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) canvas = GetComponent<Canvas>();
+            if (canvas == null) return;
+
+            _cheatLayer = new GameObject("CheatLayer", typeof(RectTransform));
+            _cheatLayer.transform.SetParent(canvas.transform, false);
+            RectTransform rt = _cheatLayer.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            _cheatLayer.AddComponent<UI_CheatPanel>();
+            _cheatLayer.transform.SetAsLastSibling();
+        }
+
+        var cheatPanel = _cheatLayer.GetComponent<UI_CheatPanel>();
+        if (cheatPanel != null) cheatPanel.Open();
+    }
+
+    /// <summary>
+    /// 치트 패널을 숨기고 일시정지 상태를 유지한다.
+    /// </summary>
+    public void HideCheat()
+    {
+        if (_cheatLayer != null)
+        {
+            var cheatPanel = _cheatLayer.GetComponent<UI_CheatPanel>();
+            if (cheatPanel != null) cheatPanel.Close();
+        }
     }
 }

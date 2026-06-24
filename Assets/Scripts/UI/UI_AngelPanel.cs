@@ -30,6 +30,9 @@ public class UI_AngelPanel : MonoBehaviour
 	[Header("Animation")]
 	[SerializeField] private RectTransform _contentRoot;
 
+	[Header("Notification")]
+	[SerializeField] private UI_SkillNotify _skillNotify;
+
 	private static readonly EUpgradeType[] _angelUpgradePool = new[]
 	{
 		EUpgradeType.AttackBoost,
@@ -186,6 +189,10 @@ public class UI_AngelPanel : MonoBehaviour
 			player.ApplyUpgradeEffect(_selectedUpgrade.type);
 		}
 
+		if (_skillNotify != null && _selectedUpgrade != null)
+			_skillNotify.Show(_selectedUpgrade.name, _selectedUpgrade.description);
+		StartCoroutine(PunchScale(_upgradeButton.transform));
+
 		Close();
 	}
 
@@ -198,7 +205,24 @@ public class UI_AngelPanel : MonoBehaviour
 		if (player != null)
 			player.Heal(player.MaxHp * 0.3f);
 
+		if (_skillNotify != null)
+			_skillNotify.Show("체력 회복", "최대 체력의 30%를 회복합니다");
+		StartCoroutine(PunchScale(_healButton.transform));
+
 		Close();
+	}
+
+	private IEnumerator PunchScale(Transform target)
+	{
+		target.localScale = Vector3.one * 1.15f;
+		float t = 0f;
+		while (t < 0.2f)
+		{
+			t += Time.unscaledDeltaTime;
+			target.localScale = Vector3.Lerp(Vector3.one * 1.15f, Vector3.one, t / 0.2f);
+			yield return null;
+		}
+		target.localScale = Vector3.one;
 	}
 
 	/// <summary>

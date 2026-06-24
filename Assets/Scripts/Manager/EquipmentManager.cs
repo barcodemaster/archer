@@ -23,6 +23,7 @@ public class EquipmentManager : Singleton<EquipmentManager>
 	public void AddItem(EquipmentData item)
 	{
 		_inventory.Add(item);
+		AchievementManager.Instance.AddProgress(Define.EAchievementType.EquipmentCollected);
 		OnInventoryChanged?.Invoke();
 		SaveManager.Save();
 	}

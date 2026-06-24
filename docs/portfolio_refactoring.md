@@ -657,3 +657,47 @@ EEquipGrade.Legendary => "GradeBg_Epic", // Legendary: Epic 배경을 공유 (�
 
 ### 수정 파일 (19개)
 MonsterBase, PlayerController, StageManager, SaveManager, AudioManager, GameManager, ExpManager, ProjectileBase, CameraController, Define, UpgradeDatabase, EquipmentDatabase, UIManager, UI_LevelUp, UI_PausePanel, HPHeart, ExpOrb, GoldOrb, EquipmentOrb, UI_AngelPanel, UI_EquipmentPanel, UI_ItemDetailPopup
+
+---
+
+## 13. Achievement System - 업적 시스템 (Feature)
+
+### 설계
+CSV 데이터 기반 업적 시스템. Observer 패턴으로 기존 매니저에 최소 침습적 hook을 추가하여 진행도를 추적한다.
+
+### 구현
+- **Data-Driven**: `AchievementTable` + `AchievementDatabase` (CSV 파싱, `EquipmentDatabase` 패턴 재사용)
+- **Observer Pattern**: `AchievementManager.OnAchievementUnlocked` 이벤트로 UI와 느슨한 결합
+- **Singleton Pattern**: `AchievementManager : Singleton<T>`
+- **SaveData 통합**: 버전 마이그레이션 (v1 -> v2), `AchievementSaveData` 추가
+- **Hook 패턴**: 기존 6개 매니저에 각 1줄 추가로 7가지 업적 타입 추적
+- **UI**: Queue 기반 토스트 팝업 (`WaitForSecondsRealtime`), ScrollRect 업적 목록 패널
+
+### 효과
+- **확장성**: CSV에 행 추가만으로 새 업적 추가 (코드 수정 불필요)
+- **최소 침습**: 기존 매니저 수정량 = 각 1줄
+- **지속성**: SaveManager 체크섬 + 버전 마이그레이션 자동 적용
+
+자세한 내용: [docs/12_업적_시스템.md](12_업적_시스템.md)
+
+---
+
+## 14. Pet System - 펫 시스템 (Feature)
+
+### 설계
+장비 슬롯(Pet1/Pet2)에 연동되는 자동전투 동반자 시스템. State Machine 없이 단순 Update 기반으로 구현하여 복잡도를 최소화했다.
+
+### 구현
+- **Component Pattern**: `PetSpawner` (Player에 부착) + 동적 `PetController` 생성
+- **Observer Pattern**: `EquipmentManager.OnEquipChanged`로 스폰/디스폰 트리거
+- **Factory Pattern**: `ProjectileFactory.Create()`로 원거리 펫 투사체 생성
+- **GameConfig 통합**: offset, 쿨다운, 스케일 등 밸런스 값 중앙 관리
+- **3가지 펫 타입**: Melee (직접 데미지), Ranged (프로젝타일), Buffer (플레이어 힐)
+- **성능 최적화**: 타겟 캐싱 (0.2초 주기), offset 기반 위치 동기화 (물리 불필요)
+
+### 효과
+- **기존 시스템 재사용**: EquipmentManager, ProjectileFactory, StageManager.AliveMonsters
+- **최소 코드**: `PetBase.cs` 교체 + `PetSpawner.cs` 신규 = 2개 파일
+- **확장 용이**: 새 펫은 프리팹 추가 + `_useArc` Inspector 설정만으로 완료
+
+자세한 내용: [docs/13_펫_시스템.md](13_펫_시스템.md)

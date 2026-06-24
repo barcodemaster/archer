@@ -33,6 +33,9 @@ public class ProjectileBase : MonoBehaviour
 	[Header("Hit Effect")]
 	[SerializeField] private GameObject _hitEffectPrefab;
 
+	[Header("Sound")]
+	[SerializeField] private AudioClip _launchSound;
+
 	private float _damage;
 	private bool _hasHit;
 	private bool _destroyed;
@@ -53,6 +56,7 @@ public class ProjectileBase : MonoBehaviour
 	// Arc
 	private Vector3 _startPos;
 	private Vector3 _targetPos;
+	public Vector3 TargetPos => _targetPos;
 	private float _elapsed;
 
 	// Bounce
@@ -62,11 +66,26 @@ public class ProjectileBase : MonoBehaviour
 
 	private Coroutine _lifeCoroutine;
 	private bool _defaultBounceEnabled;
+	private Vector3 _originalScale;
+
+	// SFX 중복 방지용 static 쿨다운
+	private static float _lastFireSfxTime;
+	private static float _lastHitSfxTime;
+	private const float SFX_COOLDOWN = 0.05f;
 
 	private void Awake()
 	{
 		_defaultBounceEnabled = _bounceEnabled;
 		_baseSpeed = _speed;
+		_originalScale = transform.localScale;
+	}
+
+	/// <summary>
+	/// 런타임에 아군/적군 발사체 여부를 설정한다. (펫 발사체 등)
+	/// </summary>
+	public void SetPlayerProjectile(bool value)
+	{
+		_isPlayerProjectile = value;
 	}
 
 	/// <summary>
@@ -123,10 +142,34 @@ public class ProjectileBase : MonoBehaviour
 		_damage = damage;
 		_startPos = transform.position;
 		_targetPos = targetPos;
+		ClampArcTarget();
+	}
+
+	public void Init(float damage, Vector3 targetPos, float height, float duration)
+	{
+		_damage = damage;
+		_startPos = transform.position;
+		_targetPos = targetPos;
+		_arcHeight = height;
+		_arcDuration = duration;
+		ClampArcTarget();
+	}
+
+	/// <summary>
+	/// Arc targetPos를 맵 경계 내로 클램프한다.
+	/// </summary>
+	private void ClampArcTarget()
+	{
+		TileMap tileMap = StageManager.Instance?.TileMap;
+		if (tileMap == null) return;
+		tileMap.GetWorldBounds(out float minX, out float maxX, out float minZ, out float maxZ);
+		_targetPos.x = Mathf.Clamp(_targetPos.x, minX, maxX);
+		_targetPos.z = Mathf.Clamp(_targetPos.z, minZ, maxZ);
 	}
 
 	private void OnEnable()
 	{
+		transform.localScale = _originalScale;
 		ResetState();
 
 		// 몬스터 발사체 속도 감속
@@ -144,6 +187,27 @@ public class ProjectileBase : MonoBehaviour
 
 		if (_moveType != EProjectileMoveType.Arc)
 			_lifeCoroutine = StartCoroutine(LifeTimerRoutine());
+
+		PlayFireSound();
+	}
+
+	private void PlayFireSound()
+	{
+		if (Time.time - _lastFireSfxTime < SFX_COOLDOWN) return;
+		_lastFireSfxTime = Time.time;
+		if (_launchSound != null)
+			AudioManager.Instance?.PlaySfx(_launchSound);
+		else if (_isPlayerProjectile)
+			AudioManager.Instance?.PlayPlayerProjectile();
+		else
+			AudioManager.Instance?.PlayMonsterProjectile();
+	}
+
+	private void PlayHitSound()
+	{
+		if (Time.time - _lastHitSfxTime < SFX_COOLDOWN) return;
+		_lastHitSfxTime = Time.time;
+		AudioManager.Instance?.PlayHit();
 	}
 
 	private void ResetState()
@@ -251,6 +315,17 @@ public class ProjectileBase : MonoBehaviour
 		Vector3 pos = Vector3.Lerp(_startPos, _targetPos, t);
 		pos.y += _arcHeight * 4f * t * (1f - t);
 		transform.position = pos;
+
+		TileMap tileMap = StageManager.Instance?.TileMap;
+		if (tileMap != null)
+		{
+			tileMap.GetWorldBounds(out float minX, out float maxX, out float minZ, out float maxZ);
+			if (pos.x < minX || pos.x > maxX || pos.z < minZ || pos.z > maxZ)
+			{
+				Explode();
+				return;
+			}
+		}
 	}
 
 	private void OnTriggerEnter(Collider other)
@@ -277,6 +352,7 @@ public class ProjectileBase : MonoBehaviour
 				if (_hitMonsterIds.Contains(mId))
 					return;
 				_hitMonsterIds.Add(mId);
+				PlayHitSound();
 
 				// 헤드샷 판정
 				if (_headshotChance > 0f && !monster.IsBoss && Random.value < _headshotChance)
@@ -328,6 +404,7 @@ public class ProjectileBase : MonoBehaviour
 			if (player != null)
 			{
 				_hasHit = true;
+				PlayHitSound();
 				player.TakeDamage(_damage);
 				SpawnHitEffect(player.transform.position);
 

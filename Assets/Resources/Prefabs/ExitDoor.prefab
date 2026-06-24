@@ -89,7 +89,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExitDoor
   _openDoorPrefab: {fileID: 6721931059143736564, guid: d11cbcf1bd1e5f346839e2f676d89830, type: 3}
-  _openDelay: 0.3
+  _openDelay: 1
   _lightIntensity: 3
   _lightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!65 &2312197525977624995

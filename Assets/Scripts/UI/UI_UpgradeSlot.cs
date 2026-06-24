@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-public class UI_UpgradeSlot : MonoBehaviour
+public class UI_UpgradeSlot : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
 	[SerializeField] private TextMeshProUGUI _nameText;
 	[SerializeField] private Image _iconImage;
@@ -13,6 +14,12 @@ public class UI_UpgradeSlot : MonoBehaviour
 
 	private UpgradeInfo _assigned;
 	private Coroutine _spinCoroutine;
+	private Coroutine _snapCoroutine;
+	private Coroutine _shrinkCoroutine;
+
+	private int _slotIndex;
+	private bool _isSelectable;
+	public System.Action<int> OnSlotConfirmed;
 
 	// 스트립 스크롤 관련
 	private RectTransform _strip;
@@ -28,6 +35,48 @@ public class UI_UpgradeSlot : MonoBehaviour
 	private bool _finalIconPlaced;
 
 	public UpgradeInfo Assigned => _assigned;
+
+	/// <summary>
+	/// 슬롯 인덱스와 선택 콜백을 초기화한다.
+	/// </summary>
+	public void Init(int index, System.Action<int> callback)
+	{
+		_slotIndex = index;
+		OnSlotConfirmed = callback;
+	}
+
+	public void OnPointerDown(PointerEventData eventData)
+	{
+		if (!_isSelectable) return;
+		_shrinkCoroutine = StartCoroutine(ShrinkCoroutine());
+	}
+
+	public void OnPointerUp(PointerEventData eventData)
+	{
+		if (!_isSelectable) return;
+		if (_shrinkCoroutine != null)
+		{
+			StopCoroutine(_shrinkCoroutine);
+			_shrinkCoroutine = null;
+		}
+		transform.localScale = Vector3.one;
+		OnSlotConfirmed?.Invoke(_slotIndex);
+	}
+
+	private IEnumerator ShrinkCoroutine()
+	{
+		float t = 0f;
+		float duration = 0.15f;
+		while (t < duration)
+		{
+			t += Time.unscaledDeltaTime;
+			float ease = Mathf.Pow(Mathf.Clamp01(t / duration), 2f);
+			float scale = Mathf.Lerp(1f, 0.8f, ease);
+			transform.localScale = Vector3.one * scale;
+			yield return null;
+		}
+		transform.localScale = Vector3.one * 0.8f;
+	}
 
 	/// <summary>
 	/// 슬롯의 표시 내용을 초기화한다.
@@ -46,6 +95,19 @@ public class UI_UpgradeSlot : MonoBehaviour
 
 	public void StartSpin()
 	{
+		// 이전 스핀이 아직 실행 중이면 정리
+		if (_spinCoroutine != null)
+		{
+			StopCoroutine(_spinCoroutine);
+			_spinCoroutine = null;
+		}
+		if (_snapCoroutine != null)
+		{
+			StopCoroutine(_snapCoroutine);
+			_snapCoroutine = null;
+		}
+		CleanupStrip();
+
 		SetInteractable(false);
 		_stopping = false;
 		_finalIconPlaced = false;
@@ -79,6 +141,7 @@ public class UI_UpgradeSlot : MonoBehaviour
 	public void SetInteractable(bool v)
 	{
 		_button.enabled = v;
+		_isSelectable = v;
 	}
 
 	/// <summary>
@@ -194,7 +257,8 @@ public class UI_UpgradeSlot : MonoBehaviour
 						float dist = Mathf.Abs(iconWorldY - centerY);
 						if (dist < speed * dt * 2f)
 						{
-							yield return StartCoroutine(SnapToCenter(centerY));
+							_snapCoroutine = StartCoroutine(SnapToCenter(centerY));
+							yield return _snapCoroutine;
 							break;
 						}
 					}
@@ -309,6 +373,7 @@ public class UI_UpgradeSlot : MonoBehaviour
 			yield return null;
 		}
 		_strip.anchoredPosition = endPos;
+		_snapCoroutine = null;
 	}
 
 	/// <summary>

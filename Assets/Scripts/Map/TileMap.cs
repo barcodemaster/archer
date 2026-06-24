@@ -59,13 +59,24 @@ public class TileMap : MonoBehaviour
 	[Header("Background")]
 	[SerializeField] private GameObject _backgroundBlockPrefab;
 	[SerializeField] private int _backgroundExtent = 5;
-	[SerializeField] private float _backgroundYOffset = -0.5f;
+	[SerializeField] private float _backgroundYOffset = -1.5f;
 
 	[Header("Settings")]
 	[SerializeField] private float _floorThickness = 0.1f;
 
 	public int Width => _width;
 	public int Height => _height;
+
+	/// <summary>
+	/// 맵의 xz 평면 월드 범위를 반환한다.
+	/// </summary>
+	public void GetWorldBounds(out float minX, out float maxX, out float minZ, out float maxZ)
+	{
+		minX = _origin.x - 0.5f;
+		maxX = _origin.x + _width - 0.5f;
+		minZ = _origin.z - 0.5f;
+		maxZ = _origin.z + _height - 0.5f;
+	}
 	public List<MonsterEntry> PlacedMonsters => _placedMonsters;
 	public GameObject[] BlockPrefabs => _blockPrefabs;
 
@@ -223,16 +234,17 @@ public class TileMap : MonoBehaviour
 				ETileType tileType = GetTile(x, z);
 				Vector3 tileCenter = GridToWorld(x, z);
 
-				// Floor cube: top surface at y=0, 개별 Collider 제거
-				GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+				// Floor quad: y=0 평면에 배치, 2.5D 스타일
+				GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Quad);
 				floor.name = $"Floor_{x}_{z}";
 				floor.transform.SetParent(container);
-				floor.transform.position = tileCenter + Vector3.down * (_floorThickness / 2f);
-				floor.transform.localScale = new Vector3(1f, _floorThickness, 1f);
+				floor.transform.position = tileCenter;
+				floor.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+				floor.transform.localScale = Vector3.one;
 				floor.isStatic = true;
 
-				// 개별 BoxCollider 제거 (단일 FloorCollider로 대체)
-				Object.DestroyImmediate(floor.GetComponent<BoxCollider>());
+				// 개별 MeshCollider 제거 (단일 FloorCollider로 대체)
+				Object.DestroyImmediate(floor.GetComponent<MeshCollider>());
 
 				Material mat = GetMaterialForType(tileType, x, z);
 				if (mat != null)
@@ -299,6 +311,16 @@ public class TileMap : MonoBehaviour
 		// Static Batching
 		container.gameObject.isStatic = true;
 		StaticBatchingUtility.Combine(container.gameObject);
+
+		// 양옆 장식물 배치
+		MapDecorationController deco = GetComponent<MapDecorationController>();
+		if (deco != null)
+			deco.GenerateDecorations(this);
+
+		// 가장자리 안개 강화
+		EdgeFogController fog = GetComponent<EdgeFogController>();
+		if (fog != null)
+			fog.GenerateFog(this);
 	}
 
 	/// <summary>

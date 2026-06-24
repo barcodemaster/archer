@@ -285,6 +285,22 @@ public class UI_EquipmentPanel : MonoBehaviour
 		var upgrade = _modelInstance.GetComponent<PlayerUpgrade>();
 		if (upgrade != null) upgrade.enabled = false;
 
+		// HP바 비활성화 (클론의 PlayerController.Awake가 싱글톤 가드로 early return하여 처리 못함)
+		var hpBar = _modelInstance.GetComponentInChildren<PlayerHPBar>(true);
+		if (hpBar != null)
+			hpBar.gameObject.SetActive(false);
+
+		// EquipmentVisual 확보 (프리팹 클론은 PlayerController 싱글톤 가드로 동적 추가 안 됨)
+		var equipVisual = _modelInstance.GetComponent<EquipmentVisual>();
+		if (equipVisual == null)
+			equipVisual = _modelInstance.AddComponent<EquipmentVisual>();
+		// 클론의 자동 구독 해제 (RefreshModelWeapon이 직접 관리)
+		EquipmentManager.Instance.OnEquipChanged -= equipVisual.RefreshWeapon;
+
+		// PetSpawner 비활성화 (클론에서 펫이 스폰되면 안 됨)
+		var petSpawner = _modelInstance.GetComponent<PetSpawner>();
+		if (petSpawner != null) petSpawner.enabled = false;
+
 		// EquipmentModel 레이어로 변경
 		int modelLayer = LayerMask.NameToLayer("EquipmentModel");
 		if (modelLayer >= 0)

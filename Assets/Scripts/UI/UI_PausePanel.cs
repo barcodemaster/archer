@@ -59,6 +59,7 @@ public class UI_PausePanel : MonoBehaviour
 		}
 
 		CreateTooltip();
+		CreateCheatButton();
 	}
 
 	/// <summary>
@@ -300,5 +301,54 @@ public class UI_PausePanel : MonoBehaviour
 	{
 		if (_tooltipObj != null) _tooltipObj.SetActive(false);
 		_lastClickedIcon = null;
+	}
+
+	/// <summary>
+	/// 패널 하단에 빨간색 CHEAT 버튼을 동적 생성한다.
+	/// </summary>
+	private void CreateCheatButton()
+	{
+		if (_panel == null) return;
+
+		GameObject btnObj = new GameObject("CheatButton", typeof(RectTransform), typeof(Image), typeof(Button));
+		btnObj.transform.SetParent(_panel.transform, false);
+
+		RectTransform btnRT = btnObj.GetComponent<RectTransform>();
+		btnRT.anchorMin = new Vector2(0.5f, 0f);
+		btnRT.anchorMax = new Vector2(0.5f, 0f);
+		btnRT.pivot = new Vector2(0.5f, 0f);
+		btnRT.anchoredPosition = new Vector2(0f, 20f);
+		btnRT.sizeDelta = new Vector2(200f, 50f);
+
+		Image btnBg = btnObj.GetComponent<Image>();
+		btnBg.color = new Color(0.8f, 0.15f, 0.15f, 1f);
+
+		Button btn = btnObj.GetComponent<Button>();
+		btn.targetGraphic = btnBg;
+		btn.onClick.AddListener(OnCheatClicked);
+
+		GameObject labelObj = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+		labelObj.transform.SetParent(btnObj.transform, false);
+		RectTransform labelRT = labelObj.GetComponent<RectTransform>();
+		labelRT.anchorMin = Vector2.zero;
+		labelRT.anchorMax = Vector2.one;
+		labelRT.offsetMin = Vector2.zero;
+		labelRT.offsetMax = Vector2.zero;
+
+		TextMeshProUGUI labelTMP = labelObj.GetComponent<TextMeshProUGUI>();
+		labelTMP.text = "CHEAT";
+		labelTMP.fontSize = 26f;
+		labelTMP.color = Color.white;
+		labelTMP.fontStyle = FontStyles.Bold;
+		labelTMP.alignment = TextAlignmentOptions.Center;
+		if (_koreanFont != null) labelTMP.font = _koreanFont;
+	}
+
+	/// <summary>
+	/// CHEAT 버튼 클릭 시 치트 패널을 연다.
+	/// </summary>
+	private void OnCheatClicked()
+	{
+		UIManager.Instance.ShowCheat();
 	}
 }

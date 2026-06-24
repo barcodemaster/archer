@@ -155,11 +155,19 @@ public class StageManager : Singleton<StageManager>
 		// 남은 보상 정리 (RewardManager에 위임)
 		RewardManager.Instance.CleanupAll();
 
+		// 날아가는 발사체 정리
+		ProjectileBase[] projectiles = FindObjectsByType<ProjectileBase>(FindObjectsSortMode.None);
+		foreach (var p in projectiles)
+			ObjectPool.Instance.Return(p.gameObject);
+
 		// 새 TileMap 생성
 		_currentTileMapInstance = Instantiate(_stagePlayOrder[index]);
 		_tileMap = _currentTileMapInstance.GetComponent<TileMap>();
 		_tileMap.GenerateVisuals();
 		_exitDoor = _tileMap.SpawnedExitDoor;
+
+		if (CameraController.Instance != null)
+			CameraController.Instance.SetMapCenter(_tileMap);
 
 		TeleportPlayerToSpawn();
 
@@ -216,6 +224,9 @@ public class StageManager : Singleton<StageManager>
 		if (cc != null) cc.enabled = false;
 		player.transform.position = spawnPos;
 		if (cc != null) cc.enabled = true;
+
+		PetSpawner spawner = player.GetComponent<PetSpawner>();
+		if (spawner != null) spawner.TeleportPetsToOffset();
 	}
 
 	private IEnumerator IntroDropSequence()
@@ -269,6 +280,10 @@ public class StageManager : Singleton<StageManager>
 	{
 		_aliveMonsters.Remove(monster);
 
+		AchievementManager.Instance.AddProgress(Define.EAchievementType.KillCount);
+		if (monster.IsBoss)
+			AchievementManager.Instance.AddProgress(Define.EAchievementType.BossKill);
+
 		RewardManager.Instance.DropMonsterRewards(monster, PlayerController.Instance);
 
 		if (_aliveMonsters.Count == 0)
@@ -296,6 +311,7 @@ public class StageManager : Singleton<StageManager>
 	{
 		RewardManager.Instance.GrantStageGold();
 		SaveManager.UpdateBestStage(_currentStageIndex);
+		AchievementManager.Instance.SetProgress(Define.EAchievementType.StageClear, _currentStageIndex + 1);
 
 		if (_exitDoor == null) yield break;
 		ExitDoor door = _exitDoor.GetComponent<ExitDoor>();
@@ -322,13 +338,17 @@ public class StageManager : Singleton<StageManager>
 	[Header("Cheat (Editor Only)")]
 	[SerializeField] private bool _useCheat = false;
 	[SerializeField] private int _cheatStageIndex = 0;
+	[SerializeField] private List<int> _cheatStageSequence = new List<int>();
 
 	private void Update()
 	{
-		if (_useCheat && Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame)
-		{
+		if (!_useCheat || Keyboard.current == null) return;
+
+		if (Keyboard.current.f5Key.wasPressedThisFrame)
 			CheatGoToStage(_cheatStageIndex);
-		}
+
+		if (Keyboard.current.f6Key.wasPressedThisFrame)
+			CheatPlaySequence();
 	}
 
 	/// <summary>
@@ -336,12 +356,77 @@ public class StageManager : Singleton<StageManager>
 	/// </summary>
 	private void CheatGoToStage(int index)
 	{
-		if (_stagePlayOrder == null || index < 0 || index >= _stagePlayOrder.Count)
+		var sequential = BuildSequentialList();
+
+		if (index < 0 || index >= sequential.Count)
 		{
-			Logger.LogWarning("StageManager", $"Cheat: Invalid stage index {index} (total: {TotalStageCount})");
+			Logger.LogWarning("StageManager", $"Cheat: Invalid stage index {index} (total: {sequential.Count})");
 			return;
 		}
-		StartCoroutine(StageTransitionSequence(index));
+
+		// 해당 프리팹을 _stagePlayOrder의 다음 위치에 삽입
+		int insertAt = _currentStageIndex + 1;
+		if (insertAt >= _stagePlayOrder.Count)
+			_stagePlayOrder.Add(sequential[index]);
+		else
+			_stagePlayOrder[insertAt] = sequential[index];
+		StartCoroutine(StageTransitionSequence(insertAt));
+	}
+
+	/// <summary>
+	/// 지정한 스테이지 시퀀스로 플레이 순서를 재구성한다 (에디터 전용 치트).
+	/// </summary>
+	private void CheatPlaySequence()
+	{
+		if (_cheatStageSequence == null || _cheatStageSequence.Count == 0)
+		{
+			Logger.LogWarning("StageManager", "Cheat: Stage sequence is empty");
+			return;
+		}
+
+		var sequential = BuildSequentialList();
+
+		var newOrder = new List<GameObject>();
+		foreach (int idx in _cheatStageSequence)
+		{
+			if (idx < 0 || idx >= sequential.Count)
+			{
+				Logger.LogWarning("StageManager", $"Cheat: Invalid index {idx} in sequence (total: {sequential.Count}), skipping");
+				continue;
+			}
+			newOrder.Add(sequential[idx]);
+		}
+
+		if (newOrder.Count == 0)
+		{
+			Logger.LogWarning("StageManager", "Cheat: No valid stages in sequence");
+			return;
+		}
+
+		_stagePlayOrder = newOrder;
+		StartCoroutine(StageTransitionSequence(0));
+	}
+
+	/// <summary>
+	/// 셔플 없는 순차 스테이지 목록을 빌드한다 (치트용 공통).
+	/// </summary>
+	private List<GameObject> BuildSequentialList()
+	{
+		var sequential = new List<GameObject>();
+		sequential.Add(_startStagePrefab);
+		int bossCount = _bossStagePrefabs != null ? _bossStagePrefabs.Count : 0;
+		int stagesPerZone = 8;
+		for (int i = 0; i < bossCount; i++)
+		{
+			List<GameObject> zoneStages = GetZoneStages(i, stagesPerZone);
+			for (int j = 0; j < 4 && j < zoneStages.Count; j++)
+				sequential.Add(zoneStages[j]);
+			sequential.Add(PickRandomAngelRoom());
+			for (int j = 4; j < 8 && j < zoneStages.Count; j++)
+				sequential.Add(zoneStages[j]);
+			sequential.Add(_bossStagePrefabs[i]);
+		}
+		return sequential;
 	}
 #endif
 }

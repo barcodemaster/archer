@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00d40c80c92d882458a4b611bc0ff5cb, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::GameConfig
+  difficultyPerStage: 0.2
+  baseExpRequired: 100
+  expPerLevel: 40
+  fastGrowthMultiplier: 1.5
+  hpHeartDropChance: 0.05
+  equipmentDropChance: 0.05
+  stageGoldReward: 150
+  monsterGoldMin: 5
+  monsterGoldMax: 20
+  aliveCostBase: 100
+  aliveCostPerStage: 80
+  pathRefreshInterval: 0.5
+  knockbackDuration: 0.15
+  hitSquashScaleY: 0.6
+  hitSquashScaleXZ: 1.4
+  hitSquashDuration: 0.05
+  hitStretchScaleY: 1.3
+  hitStretchScaleXZ: 0.7
+  hitStretchDuration: 0.05
+  hitRecoverDuration: 0.1
+  footstepInterval: 0.3
+  bgmFadeDuration: 1
+  closestMonsterCacheInterval: 0.1
+  petOffset1: {x: -0.8, y: 0, z: -0.5}
+  petOffset2: {x: 0.8, y: 0, z: -0.5}
+  petAttackCooldown: 1.5
+  petScale: 1
+  petPatrolRadius: 2
+  petPatrolSpeed: 2
+  petPatrolWaitTime: 0.8
+  petReturnThreshold: 6
+  petReturnSpeed: 6
+  petChaseSpeed: 6
+  petDetectionRange: 10
+  petAttackRange: 5
+  petChaseTimeout: 3

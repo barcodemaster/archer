@@ -831,17 +831,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TreantMinion
   _maxHp: 100
-  _damage: 10
+  _damage: 12
   _contactDamageCooldown: 2
   _snapToGroundOffset: {x: 0, y: 0, z: 0}
   _triggerColliderCenter: {x: 0, y: 0.4, z: 0}
   _physicsRadius: 0.5
   _physicsHeight: 1.2
-  _weight: 5
+  _weight: 1.5
   _overlapWithPlayer: 1
   _immovable: 0
   _isBoss: 0
-  _expReward: 20
+  _expReward: 15
+  _modelTransform: {fileID: 0}
   _jumpIntervalMin: 2
   _jumpIntervalMax: 4
   _jumpDistance: 3

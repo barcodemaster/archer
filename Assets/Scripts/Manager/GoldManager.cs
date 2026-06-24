@@ -16,6 +16,7 @@ public class GoldManager : Singleton<GoldManager>
 	public void AddGold(int amount)
 	{
 		_gold += amount;
+		AchievementManager.Instance.AddProgress(Define.EAchievementType.GoldEarned, amount);
 		OnGoldChanged?.Invoke();
 		SaveManager.Save();
 	}

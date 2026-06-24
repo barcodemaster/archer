@@ -117,6 +117,7 @@ MonoBehaviour:
   _spinSpeed: 720
   _explosionPrefab: {fileID: 8210520550165414391, guid: 9961a36d668ff3142a3e35e13e558862, type: 3}
   _hitEffectPrefab: {fileID: 255548979746159036, guid: 5c02747361d15324285e11ee3da0156f, type: 3}
+  _hitSound: {fileID: 8300000, guid: ffb159a21c8a04135a5616979c828fab, type: 3}
 --- !u!135 &2149108038344902662
 SphereCollider:
   m_ObjectHideFlags: 0

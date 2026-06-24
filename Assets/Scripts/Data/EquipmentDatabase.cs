@@ -69,6 +69,7 @@ public static class EquipmentDatabase
 					goldCostPerLevel = GetInt(cols, headerMap, "goldCostPerLevel"),
 					dropWeight = GetInt(cols, headerMap, "dropWeight"),
 					prefab = GetCol(cols, headerMap, "prefab"),
+					attackCooldown = GetFloat(cols, headerMap, "attackCooldown"),
 				};
 				list.Add(table);
 			}

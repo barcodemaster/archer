@@ -10,6 +10,7 @@ public class UI_LevelUp : MonoBehaviour
 	[SerializeField] private TextMeshProUGUI _subtitleText;
 	[SerializeField] private UI_UpgradeSlot[] _slots;
 	[SerializeField] private GameObject _panel;
+	[SerializeField] private UI_SkillNotify _skillNotify;
 
 	[Header("Roulette")]
 	[SerializeField] private float _spinDuration = 1f;
@@ -43,10 +44,7 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 		_expManager.OnLevelUp += OnLevelUp;
 
 		for (int i = 0; i < _slots.Length; i++)
-		{
-			int idx = i;
-			_slots[i].GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(() => OnSlotSelected(idx));
-		}
+			_slots[i].Init(i, OnSlotSelected);
 	}
 
 	private void OnDestroy()
@@ -182,6 +180,12 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 
 	private void OnSlotSelected(int idx)
 	{
+		// 중복 선택 방지
+		for (int i = 0; i < _slots.Length; i++)
+			_slots[i].SetInteractable(false);
+
+		// 업그레이드 적용
+		AchievementManager.Instance.AddProgress(Define.EAchievementType.UpgradeSelected);
 		UpgradeInfo selected = _slots[idx].Assigned;
 		PlayerController player = PlayerController.Instance;
 		if (player != null)
@@ -191,6 +195,10 @@ private Queue<int> _pendingLevelUps = new Queue<int>();
 				upgrade.AddUpgrade(selected.type);
 			player.ApplyUpgradeEffect(selected.type);
 		}
+
+		// 알림 패널 표시
+		if (_skillNotify != null)
+			_skillNotify.Show(selected.name, selected.description);
 
 		if (_pendingLevelUps.Count > 0)
 			Show(_pendingLevelUps.Dequeue());

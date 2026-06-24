@@ -147,18 +147,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1dc47c1c11b2b5145afb5e1d7c5f95d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GhostMonster
-  _maxHp: 100
-  _damage: 10
+  _maxHp: 90
+  _damage: 14
   _contactDamageCooldown: 0.5
   _snapToGroundOffset: {x: 0, y: 0, z: 0}
   _triggerColliderCenter: {x: 0, y: 0.6, z: 0}
   _physicsRadius: 0.4
   _physicsHeight: 0.9
-  _weight: 1
+  _weight: 0.8
   _overlapWithPlayer: 1
   _immovable: 0
   _isBoss: 0
-  _expReward: 20
+  _expReward: 15
+  _modelTransform: {fileID: 5199711351745469691}
   _jumpIntervalMin: 1.5
   _jumpIntervalMax: 3
   _jumpDistance: 3
@@ -170,6 +171,11 @@ MonoBehaviour:
 --- !u!4 &796652407307068396 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 46f311046d2104da8b56be3d0a49a119, type: 3}
+  m_PrefabInstance: {fileID: 902125486744929287}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5199711351745469691 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4948870729968441596, guid: 46f311046d2104da8b56be3d0a49a119, type: 3}
   m_PrefabInstance: {fileID: 902125486744929287}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4335067753688445394

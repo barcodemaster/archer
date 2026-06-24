@@ -41,7 +41,7 @@ public class UI_StageProgress : MonoBehaviour
 
     private void OnExitDoorOpened()
     {
-        if (StageManager.Instance.CurrentStageIndex == 0) return;
+        if (StageManager.Instance.IsStartStage(StageManager.Instance.CurrentStageIndex)) return;
 
         gameObject.SetActive(true);
         int current = StageManager.Instance.CurrentStageIndex;

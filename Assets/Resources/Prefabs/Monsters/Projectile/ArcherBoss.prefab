@@ -138,3 +138,4 @@ MonoBehaviour:
   _spinSpeed: 720
   _explosionPrefab: {fileID: 0}
   _hitEffectPrefab: {fileID: 255548979746159036, guid: 5c02747361d15324285e11ee3da0156f, type: 3}
+  _hitSound: {fileID: 8300000, guid: ffb159a21c8a04135a5616979c828fab, type: 3}

@@ -297,6 +297,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5416254453190645775}
   - component: {fileID: 2765202417804333715}
+  - component: {fileID: 99623807316020856}
+  - component: {fileID: 6063946260587979893}
   m_Layer: 0
   m_Name: StageProgressLayer
   m_TagString: Untagged
@@ -348,6 +350,41 @@ MonoBehaviour:
   _punchScaleDuration: 0.3
   _autoCloseDelay: 1
   _panelShowDelay: 0.3
+--- !u!114 &99623807316020856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1474542727228337663}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7887186e26137d84abc7901d27f09abc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapDecorationController
+  _leftDecorationPrefabs: []
+  _rightDecorationPrefabs: []
+  _xOffset: 1.5
+  _spacing: 2
+  _yOffset: 0
+  _extraExtent: 3
+  _scaleRange: {x: 0.8, y: 1.2}
+--- !u!114 &6063946260587979893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1474542727228337663}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec36f414b7a3513439ecdb106da4e6f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeFogController
+  _fogColor: {r: 1, g: 1, b: 1, a: 0.6}
+  _fogDepth: 5
+  _fogY: 0.1
+  _extraWidth: 10
 --- !u!1 &1546085660483676138
 GameObject:
   m_ObjectHideFlags: 0

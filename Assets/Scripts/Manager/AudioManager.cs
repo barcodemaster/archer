@@ -150,6 +150,15 @@ public class AudioManager : Singleton<AudioManager>
 	}
 
 	/// <summary>
+	/// 임의의 AudioClip을 SFX 채널로 재생한다.
+	/// </summary>
+	public void PlaySfx(AudioClip clip)
+	{
+		if (clip != null)
+			_sfxSource.PlayOneShot(clip);
+	}
+
+	/// <summary>
 	/// BGM을 페이드 아웃한다.
 	/// </summary>
 	public void FadeBGMOut(float duration = -1f)

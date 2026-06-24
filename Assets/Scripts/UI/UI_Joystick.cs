@@ -26,7 +26,7 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 		_backgroundRt = _background.GetComponent<RectTransform>();
 		_cursorStartPos = _cursorRt.anchoredPosition;
 		_backgroundStartPos = _backgroundRt.anchoredPosition;
-		_radius = _backgroundRt.sizeDelta.y / 5;
+		_radius = _backgroundRt.sizeDelta.y / 4;
 	}
 
 	public void OnPointerDown(PointerEventData eventData)
@@ -45,16 +45,6 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 		GameManager.Instance.JoystickDir = Vector2.zero;
 	}
 
-	/// <summary>
-	/// 외부에서 강제로 조이스틱 상태를 리셋한다 (레벨업 등 UI 전환 시 사용).
-	/// </summary>
-	public void ForceReset()
-	{
-		_cursorRt.anchoredPosition = _cursorStartPos;
-		_backgroundRt.anchoredPosition = _backgroundStartPos;
-		GameManager.Instance.JoystickDir = Vector2.zero;
-	}
-
 	public void OnDrag(PointerEventData eventData)
 	{
 		Vector2 touchDir = (eventData.position - _touchPos);
@@ -65,4 +55,15 @@ public class UI_Joystick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
 		GameManager.Instance.JoystickDir = moveDir;  // 글로벌 입력 전달
 	}
+
+	/// <summary>
+	/// 외부에서 강제로 조이스틱 상태를 리셋한다 (레벨업 등 UI 전환 시 사용).
+	/// </summary>
+	public void ForceReset()
+	{
+		_cursorRt.anchoredPosition = _cursorStartPos;
+		_backgroundRt.anchoredPosition = _backgroundStartPos;
+		GameManager.Instance.JoystickDir = Vector2.zero;
+	}
+
 }

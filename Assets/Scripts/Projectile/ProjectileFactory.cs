@@ -58,4 +58,18 @@ public static class ProjectileFactory
 
 		return proj;
 	}
+
+	public static ProjectileBase CreateArc(GameObject prefab, Vector3 position, Vector3 targetPos, float damage, float arcDuration)
+	{
+		if (prefab == null) return null;
+
+		GameObject go = ObjectPool.Instance.Get(prefab);
+		go.transform.position = position;
+
+		ProjectileBase proj = go.GetComponent<ProjectileBase>();
+		if (proj != null)
+			proj.Init(damage,targetPos,1f,arcDuration);
+
+		return proj;
+	}
 }

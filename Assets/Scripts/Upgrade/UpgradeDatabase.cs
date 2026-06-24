@@ -35,6 +35,9 @@ public class UpgradeInfo
 
 	// 적 디버프
 	public float enemySlowPercent;
+
+	// 가중치 (업그레이드 등장 확률)
+	public int weight = 10;
 }
 
 public static class UpgradeDatabase
@@ -97,6 +100,8 @@ public static class UpgradeDatabase
 					attackPerHpPercent = GetFloat(cols, headerMap, "attackPerHpPercent"),
 					enemySlowPercent = GetFloat(cols, headerMap, "enemySlowPercent"),
 				};
+				string weightStr = GetCol(cols, headerMap, "weight");
+				info.weight = int.TryParse(weightStr, out int w) ? w : 10;
 				list.Add(info);
 			}
 			catch (System.Exception e)
@@ -174,7 +179,23 @@ public static class UpgradeDatabase
 
 		for (int i = 0; i < count && pool.Count > 0; i++)
 		{
-			int idx = Random.Range(0, pool.Count);
+			int totalWeight = 0;
+			foreach (var item in pool)
+				totalWeight += item.weight;
+
+			int roll = Random.Range(0, totalWeight);
+			int cumulative = 0;
+			int idx = 0;
+			for (int j = 0; j < pool.Count; j++)
+			{
+				cumulative += pool[j].weight;
+				if (roll < cumulative)
+				{
+					idx = j;
+					break;
+				}
+			}
+
 			result.Add(pool[idx]);
 			pool.RemoveAt(idx);
 		}
