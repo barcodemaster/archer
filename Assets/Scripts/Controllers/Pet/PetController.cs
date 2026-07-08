@@ -276,7 +276,7 @@ public class PetController : MonoBehaviour
 	/// </summary>
 	public MonsterBase FindNearestMonster(float range)
 	{
-		IReadOnlyList<MonsterBase> monsters = StageManager.Instance.AliveMonsters;
+		IReadOnlyList<MonsterBase> monsters = StageManager.Instance?.AliveMonsters;
 		if (monsters == null || monsters.Count == 0) return null;
 
 		float rangeSqr = range * range;

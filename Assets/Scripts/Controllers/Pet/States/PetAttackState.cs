@@ -10,6 +10,13 @@ public class PetAttackState : IPetState
 	public void Enter(PetController pet)
 	{
 		pet.AttackTimer = 0f;
+		// ChaseState → AttackState 전환 사이에 타겟이 파괴될 수 있으므로 방어 체크
+		if (pet.ChaseTarget == null || pet.ChaseTarget.IsDead)
+		{
+			pet.ChaseTarget = null;
+			pet.TransitionTo(PetPatrolState.Instance);
+			return;
+		}
 		pet.FaceDirection(pet.ChaseTarget.transform.position);
 		pet.FireProjectile();
 		pet.PlayAnimation(Define.ATTACK);
@@ -20,9 +27,13 @@ public class PetAttackState : IPetState
 		var cfg = GameConfig.Instance;
 		pet.AttackTimer += Time.deltaTime;
 
-		if (pet.AttackTimer < pet.AttackCooldown) return;
-
-		// Return 체크
+		// 쿨다운과 무관하게 타겟 사망/플레이어 이탈은 즉시 처리
+		if (pet.ChaseTarget == null || pet.ChaseTarget.IsDead)
+		{
+			pet.ChaseTarget = null;
+			pet.TransitionTo(PetPatrolState.Instance);
+			return;
+		}
 		if (pet.DistanceToPlayer > cfg.petReturnThreshold)
 		{
 			pet.ChaseTarget = null;
@@ -30,13 +41,7 @@ public class PetAttackState : IPetState
 			return;
 		}
 
-		// 타겟 사망
-		if (pet.ChaseTarget == null || pet.ChaseTarget.IsDead)
-		{
-			pet.ChaseTarget = null;
-			pet.TransitionTo(PetPatrolState.Instance);
-			return;
-		}
+		if (pet.AttackTimer < pet.AttackCooldown) return;
 
 		// 사거리 내 → 재공격
 		float dist = Vector3.Distance(pet.transform.position, pet.ChaseTarget.transform.position);

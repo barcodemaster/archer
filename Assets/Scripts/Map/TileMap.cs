@@ -35,6 +35,7 @@ public class TileMap : MonoBehaviour
 	[SerializeField] private List<TileEntry> _tileOverrides = new List<TileEntry>();
 	[SerializeField] private List<BlockEntry> _placedBlocks = new List<BlockEntry>();
 	[SerializeField] private List<MonsterEntry> _placedMonsters = new List<MonsterEntry>();
+	[SerializeField] private List<BlockEntry> _placedTraps = new List<BlockEntry>();
 	[SerializeField] private Vector2Int _playerSpawnPoint = new Vector2Int(1, 1);
 	[SerializeField] private Vector2Int _exitPoint = new Vector2Int(-1, -1);
 
@@ -48,6 +49,11 @@ public class TileMap : MonoBehaviour
 	[SerializeField] private GameObject[] _blockPrefabs;
 	[SerializeField] private GameObject _spikePrefab;
 	[SerializeField] private float _blockYOffset = 0.5f;
+
+	[Header("Trap Prefabs")]
+	[SerializeField] private GameObject[] _trapPrefabs;
+	[SerializeField] private float _trapYOffset = 0.5f;
+	public GameObject[] TrapPrefabs => _trapPrefabs;
 
 	[Header("Monster Prefabs")]
 	[SerializeField] private GameObject[] _monsterPrefabs;
@@ -88,6 +94,7 @@ public class TileMap : MonoBehaviour
 	// Dictionary 캐시 (런타임 O(1) 조회용)
 	private Dictionary<Vector2Int, ETileType> _tileCache;
 	private Dictionary<Vector2Int, int> _blockCache;
+	private Dictionary<Vector2Int, int> _trapCache;
 
 	/// <summary>
 	/// _tileOverrides/_placedBlocks 리스트를 Dictionary로 변환하여 캐싱한다.
@@ -101,6 +108,10 @@ public class TileMap : MonoBehaviour
 		_blockCache = new Dictionary<Vector2Int, int>(_placedBlocks.Count);
 		foreach (var b in _placedBlocks)
 			_blockCache[b.pos] = b.prefabIndex;
+
+		_trapCache = new Dictionary<Vector2Int, int>(_placedTraps.Count);
+		foreach (var t in _placedTraps)
+			_trapCache[t.pos] = t.prefabIndex;
 	}
 
 	/// <summary>
@@ -155,6 +166,18 @@ public class TileMap : MonoBehaviour
 		// 캐시 없음 — 에디터 호환 fallback
 		foreach (var b in _placedBlocks)
 			if (b.pos.x == x && b.pos.y == z) return b.prefabIndex;
+		return -1;
+	}
+
+	private int GetTrapIndex(int x, int z)
+	{
+		if (_trapCache != null)
+		{
+			if (_trapCache.TryGetValue(new Vector2Int(x, z), out int idx)) return idx;
+			return -1;
+		}
+		foreach (var t in _placedTraps)
+			if (t.pos.x == x && t.pos.y == z) return t.prefabIndex;
 		return -1;
 	}
 
@@ -281,6 +304,15 @@ public class TileMap : MonoBehaviour
 					foreach (var col in block.GetComponentsInChildren<Collider>())
 						Object.DestroyImmediate(col);
 					blockPositions.Add(new Vector2Int(x, z));
+				}
+
+				// Trap 프리팹 (콜라이더 유지, StaticBatching 제외, 애니메이션 유지)
+				int trapIdx = GetTrapIndex(x, z);
+				if (trapIdx >= 0 && _trapPrefabs != null && trapIdx < _trapPrefabs.Length && _trapPrefabs[trapIdx] != null)
+				{
+					GameObject trap = Instantiate(_trapPrefabs[trapIdx], transform);
+					trap.name = $"Trap_{x}_{z}";
+					trap.transform.position = tileCenter + Vector3.up * _trapYOffset;
 				}
 			}
 		}
@@ -542,6 +574,17 @@ public class TileMap : MonoBehaviour
 			else
 				DestroyImmediate(container.gameObject);
 		}
+
+		// container 외부에 생성된 Trap 오브젝트 정리
+		for (int i = transform.childCount - 1; i >= 0; i--)
+		{
+			var child = transform.GetChild(i);
+			if (child.name.StartsWith("Trap_"))
+			{
+				if (Application.isPlaying) Destroy(child.gameObject);
+				else DestroyImmediate(child.gameObject);
+			}
+		}
 	}
 
 	/// <summary>
@@ -629,6 +672,19 @@ public class TileMap : MonoBehaviour
 			}
 		if (prefabIndex >= 0)
 			_placedMonsters.Add(new MonsterEntry { pos = new Vector2Int(x, z), prefabIndex = prefabIndex });
+	}
+
+	public void SetTrap(int x, int z, int prefabIndex)
+	{
+		for (int i = 0; i < _placedTraps.Count; i++)
+			if (_placedTraps[i].pos.x == x && _placedTraps[i].pos.y == z)
+			{
+				if (prefabIndex < 0) _placedTraps.RemoveAt(i);
+				else _placedTraps[i] = new BlockEntry { pos = new Vector2Int(x, z), prefabIndex = prefabIndex };
+				return;
+			}
+		if (prefabIndex >= 0)
+			_placedTraps.Add(new BlockEntry { pos = new Vector2Int(x, z), prefabIndex = prefabIndex });
 	}
 
 	public void SetSpawnPoint(Vector2Int p) => _playerSpawnPoint = p;

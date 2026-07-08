@@ -128,6 +128,11 @@ public class UI_UpgradeSlot : MonoBehaviour, IPointerDownHandler, IPointerUpHand
 				StopCoroutine(_spinCoroutine);
 				_spinCoroutine = null;
 			}
+			if (_snapCoroutine != null)
+			{
+				StopCoroutine(_snapCoroutine);
+				_snapCoroutine = null;
+			}
 			CleanupStrip();
 			Display(_assigned);
 			StartCoroutine(PunchScale());

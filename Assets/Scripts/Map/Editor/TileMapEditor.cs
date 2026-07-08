@@ -5,7 +5,7 @@ using static Define;
 [CustomEditor(typeof(TileMap))]
 public class TileMapEditor : Editor
 {
-	private enum EBrushMode { None, TilePaint, BlockPlace, SpikePlace, MonsterPlace, SpawnPoint, ExitPoint }
+	private enum EBrushMode { None, TilePaint, BlockPlace, SpikePlace, TrapPlace, MonsterPlace, SpawnPoint, ExitPoint }
 
 	private EBrushMode _brushMode = EBrushMode.None;
 	private ETileType _tileBrush = ETileType.Path;
@@ -14,6 +14,8 @@ public class TileMapEditor : Editor
 	private bool _removeSpike = false;
 	private int _monsterBrushIndex = 0;
 	private bool _removeMonster = false;
+	private int _trapBrushIndex = 0;
+	private bool _removeTrap = false;
 
 	public override void OnInspectorGUI()
 	{
@@ -56,6 +58,16 @@ public class TileMapEditor : Editor
 				break;
 			case EBrushMode.SpikePlace:
 				_removeSpike = EditorGUILayout.Toggle("Remove Spike", _removeSpike);
+				break;
+			case EBrushMode.TrapPlace:
+				_removeTrap = EditorGUILayout.Toggle("Remove Trap", _removeTrap);
+				if (!_removeTrap && tileMap.TrapPrefabs != null && tileMap.TrapPrefabs.Length > 0)
+				{
+					string[] names = new string[tileMap.TrapPrefabs.Length];
+					for (int i = 0; i < names.Length; i++)
+						names[i] = tileMap.TrapPrefabs[i] != null ? tileMap.TrapPrefabs[i].name : $"(empty {i})";
+					_trapBrushIndex = EditorGUILayout.Popup("Trap Prefab", _trapBrushIndex, names);
+				}
 				break;
 			case EBrushMode.MonsterPlace:
 				_removeMonster = EditorGUILayout.Toggle("Remove Monster", _removeMonster);
@@ -141,6 +153,14 @@ public class TileMapEditor : Editor
 						EditorUtility.SetDirty(tileMap);
 						tileMap.GenerateVisuals();
 					}
+					break;
+
+				case EBrushMode.TrapPlace:
+					int newTrapIdx = _removeTrap ? -1 : _trapBrushIndex;
+					Undo.RecordObject(tileMap, "Place Trap");
+					tileMap.SetTrap(grid.x, grid.y, newTrapIdx);
+					EditorUtility.SetDirty(tileMap);
+					tileMap.GenerateVisuals();
 					break;
 
 				case EBrushMode.MonsterPlace:
